@@ -4,16 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EchoRealms: Shadow Odyssey</title>
-    <link rel="stylesheet" href="styles.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0d001a 0%, #1a0033 50%, #2a1040 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
         #gameContainer {
             width: 1000px;
             height: 700px;
-            margin: 0 auto;
             border: 3px solid #00ffff;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.6);
+            box-shadow: 
+                0 0 50px rgba(0, 255, 255, 0.6),
+                inset 0 0 30px rgba(0, 255, 255, 0.1);
+            position: relative;
         }
         
         #phaser-game {
@@ -34,19 +51,23 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            transition: opacity 0.5s ease;
         }
         
         .loading-screen h1 {
             color: #00ffff;
             font-size: 3rem;
             margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            text-align: center;
+            animation: glow 2s ease-in-out infinite alternate;
         }
         
         .loading-screen p {
             color: #cccccc;
             font-size: 1.2rem;
             margin: 10px 0;
+            text-align: center;
         }
         
         .loading-spinner {
@@ -63,6 +84,15 @@
             to { transform: rotate(360deg); }
         }
         
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            }
+            to {
+                text-shadow: 0 0 30px rgba(0, 255, 255, 1), 0 0 40px rgba(0, 255, 255, 0.8);
+            }
+        }
+        
         .controls-info {
             position: absolute;
             bottom: 20px;
@@ -73,16 +103,26 @@
             color: #cccccc;
             font-size: 0.9rem;
             border: 1px solid #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
         }
         
         .controls-info strong {
             color: #00ffff;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        
+        .controls-info div {
+            margin: 3px 0;
         }
         
         .hidden {
             display: none;
+        }
+        
+        .fade-out {
+            opacity: 0;
         }
     </style>
 </head>
@@ -94,33 +134,48 @@
             <h1>🌌 EchoRealms: Shadow Odyssey</h1>
             <div class="loading-spinner"></div>
             <p>Loading magical realms...</p>
-            <p>Get ready to master your shadow abilities!</p>
+            <p>Master your shadow abilities!</p>
         </div>
         
         <div class="controls-info">
-            <strong>Controls:</strong>
-            WASD/Arrows: Move | X: Dash | C: Time Slow | Z: Ground Slam
+            <strong>🎮 Controls:</strong>
+            <div>🏃 WASD/Arrows: Move & Jump</div>
+            <div>⚡ X: Echo Dash</div>
+            <div>⏰ C: Time Slow</div>
+            <div>💥 Z: Ground Slam</div>
+            <div>🔄 R: Restart Level</div>
         </div>
     </div>
 
+    <!-- Load Phaser.js from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
-    <script src="game.js"></script>
+    
+    <!-- Load our game files -->
+    <script src="src/config.js"></script>
+    <script src="src/systems/AudioSystem.js"></script>
+    <script src="src/systems/ParticleSystem.js"></script>
+    <script src="src/entities/Player.js"></script>
+    <script src="src/entities/Enemy.js"></script>
+    <script src="src/entities/Collectible.js"></script>
+    <script src="src/managers/BiomeManager.js"></script>
+    <script src="src/scenes/GameScene.js"></script>
+    <script src="src/main.js"></script>
+    
     <script>
-        // Simple game initialization
+        // Initialize game when everything is loaded
         window.addEventListener('load', function() {
-            // Hide loading screen after 2 seconds
+            // Hide loading screen after 1.5 seconds
             setTimeout(function() {
                 const loadingScreen = document.getElementById('loadingScreen');
                 if (loadingScreen) {
-                    loadingScreen.style.opacity = '0';
-                    loadingScreen.style.transition = 'opacity 0.5s ease';
+                    loadingScreen.classList.add('fade-out');
                     setTimeout(() => {
                         loadingScreen.classList.add('hidden');
                     }, 500);
                 }
-            }, 2000);
+            }, 1500);
             
-            // Add keyboard shortcuts
+            // Add fullscreen toggle
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'F11') {
                     event.preventDefault();
@@ -132,9 +187,10 @@
                 }
             });
             
-            console.log('🎮 EchoRealms: Shadow Odyssey initialized!');
-            console.log('✨ Controls: WASD/Arrows to move, X to dash, C for time slow, Z for ground slam');
-            console.log('🏆 Objective: Collect artifacts to progress through biomes!');
+            console.log('🎮 EchoRealms: Shadow Odyssey Loading Complete!');
+            console.log('✨ Use WASD or Arrow keys to move and jump');
+            console.log('🌟 Press X for Echo Dash, C for Time Slow, Z for Ground Slam');
+            console.log('🏆 Collect all artifacts to progress through biomes!');
         });
     </script>
 </body>

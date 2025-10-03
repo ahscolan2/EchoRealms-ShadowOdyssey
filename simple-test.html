@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Game Test</title>
+    <style>
+        body {
+            background: #1a0033;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+            padding: 50px;
+        }
+        #game {
+            border: 2px solid #00ffff;
+            margin: 20px auto;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .pass { background: #27ae60; }
+        .fail { background: #e74c3c; }
+        button {
+            background: #00aaaa;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>EchoRealms Simple Test</h1>
+    
+    <div id="status1" class="status">Loading Phaser...</div>
+    <div id="status2" class="status">Waiting for Phaser...</div>
+    <div id="status3" class="status">Game not started</div>
+    
+    <div id="game"></div>
+    
+    <button onclick="testGame()">Start Test Game</button>
+    <button onclick="checkOriginal()">Test Original Files</button>
+    
+    <div id="console" style="background: black; color: lime; padding: 10px; margin: 20px 0; text-align: left; font-family: monospace; max-height: 200px; overflow-y: auto;"></div>
+    
+    <script>
+        function log(msg) {
+            const console = document.getElementById('console');
+            console.textContent += new Date().toLocaleTimeString() + ': ' + msg + '\n';
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        log('Test page started');
+        
+        // Load Phaser
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js';
+        
+        script.onload = function() {
+            document.getElementById('status1').textContent = '✅ Phaser loaded: ' + Phaser.VERSION;
+            document.getElementById('status1').className = 'status pass';
+            log('✅ Phaser loaded successfully: ' + Phaser.VERSION);
+            
+            document.getElementById('status2').textContent = '✅ Ready to test game';
+            document.getElementById('status2').className = 'status pass';
+        };
+        
+        script.onerror = function() {
+            document.getElementById('status1').textContent = '❌ Failed to load Phaser';
+            document.getElementById('status1').className = 'status fail';
+            log('❌ Failed to load Phaser from CDN');
+        };
+        
+        document.head.appendChild(script);
+        
+        function testGame() {
+            try {
+                log('🎮 Starting simple game test...');
+                
+                class SimpleScene extends Phaser.Scene {
+                    create() {
+                        log('Creating simple scene...');
+                        
+                        // Simple player square
+                        this.player = this.add.rectangle(100, 300, 40, 40, 0x00ffff);
+                        this.physics.add.existing(this.player);
+                        this.player.body.setCollideWorldBounds(true);
+                        
+                        // Ground
+                        const ground = this.add.rectangle(250, 400, 500, 50, 0x666666);
+                        this.physics.add.existing(ground, true);
+                        this.physics.add.collider(this.player, ground);
+                        
+                        // Controls
+                        this.wasd = this.input.keyboard.addKeys('W,A,S,D');
+                        
+                        // Instructions
+                        this.add.text(10, 10, 'WASD to move. If you see this, the game works!', {
+                            fontSize: '16px',
+                            color: '#ffffff'
+                        });
+                        
+                        log('✅ Simple scene created successfully');
+                    }
+                    
+                    update() {
+                        if (!this.player || !this.player.body) return;
+                        
+                        const speed = 200;
+                        
+                        if (this.wasd.A.isDown) {
+                            this.player.body.setVelocityX(-speed);
+                        } else if (this.wasd.D.isDown) {
+                            this.player.body.setVelocityX(speed);
+                        } else {
+                            this.player.body.setVelocityX(0);
+                        }
+                        
+                        if (this.wasd.W.isDown && this.player.body.touching.down) {
+                            this.player.body.setVelocityY(-400);
+                        }
+                    }
+                }
+                
+                const config = {
+                    type: Phaser.AUTO,
+                    width: 500,
+                    height: 400,
+                    parent: 'game',
+                    backgroundColor: '#2c3e50',
+                    physics: {
+                        default: 'arcade',
+                        arcade: {
+                            gravity: { y: 600 },
+                            debug: false
+                        }
+                    },
+                    scene: SimpleScene
+                };
+                
+                new Phaser.Game(config);
+                
+                document.getElementById('status3').textContent = '✅ Simple game started!';
+                document.getElementById('status3').className = 'status pass';
+                log('✅ Simple game started successfully');
+                
+            } catch (error) {
+                document.getElementById('status3').textContent = '❌ Game error: ' + error.message;
+                document.getElementById('status3').className = 'status fail';
+                log('❌ Game error: ' + error.message);
+                log('Error stack: ' + error.stack);
+            }
+        }
+        
+        function checkOriginal() {
+            log('🔍 Checking original game files...');
+            
+            // Test if files exist
+            Promise.all([
+                fetch('./index.html').then(r => r.ok),
+                fetch('./game.js').then(r => r.ok),
+                fetch('./gameManager.js').then(r => r.ok),
+                fetch('./styles.css').then(r => r.ok)
+            ]).then(results => {
+                log('File accessibility test:');
+                log('- index.html: ' + (results[0] ? '✅ OK' : '❌ FAIL'));
+                log('- game.js: ' + (results[1] ? '✅ OK' : '❌ FAIL'));
+                log('- gameManager.js: ' + (results[2] ? '✅ OK' : '❌ FAIL'));
+                log('- styles.css: ' + (results[3] ? '✅ OK' : '❌ FAIL'));
+                
+                if (results.every(r => r)) {
+                    log('✅ All original files are accessible');
+                    log('🚀 The issue might be a JavaScript error in the game logic');
+                    log('💡 Try the working-game.html version as an alternative');
+                } else {
+                    log('❌ Some files are missing or inaccessible');
+                }
+            }).catch(error => {
+                log('❌ Error checking files: ' + error.message);
+            });
+        }
+        
+        // Global error catcher
+        window.addEventListener('error', function(event) {
+            log('🔥 GLOBAL ERROR: ' + event.message + ' at line ' + event.lineno);
+        });
+    </script>
+</body>
+</html>

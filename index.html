@@ -162,7 +162,9 @@
         <div id="victoryScreen" class="screen hidden">
             <h1>Victory!</h1>
             <p>You have conquered the Shadow Odyssey!</p>
-            <p>All biomes cleared and Shadow King defeated!</p>
+            <p>All 12 levels cleared and Shadow King defeated!</p>
+            <p id="finalScore" style="font-size: 1.3em; color: #ffdd00; margin-top: 15px;"></p>
+            <p id="highScoreDisplay" style="color: #00ff88;"></p>
             <button onclick="restartGame()">Play Again</button>
         </div>
         
@@ -184,8 +186,11 @@
                 
                 this.gameState = 'start'; // start, playing, paused, gameOver, victory
                 this.currentLevel = 1;
-                this.maxLevel = 4;
+                this.maxLevel = 12; // Expanded from 4 to 12 levels
                 this.score = 0;
+                this.highScore = parseInt(localStorage.getItem('echoRealmsHighScore') || '0');
+                this.achievements = JSON.parse(localStorage.getItem('echoRealmsAchievements') || '[]');
+                this.settings = JSON.parse(localStorage.getItem('echoRealmsSettings') || '{"sfxVolume":0.7,"musicVolume":0.5,"showTutorial":true}');
                 
                 // Input
                 this.keys = {};
@@ -194,6 +199,8 @@
                 // Game objects
                 this.player = new Player(50, 450);
                 this.platforms = [];
+                this.movingPlatforms = [];
+                this.hazards = [];
                 this.enemies = [];
                 this.collectibles = [];
                 this.particles = [];
@@ -226,6 +233,8 @@
             loadLevel(level) {
                 this.currentLevel = level;
                 this.platforms = [];
+                this.movingPlatforms = [];
+                this.hazards = [];
                 this.enemies = [];
                 this.collectibles = [];
                 this.particles = [];
@@ -239,102 +248,379 @@
                 this.player.energy = this.player.maxEnergy;
                 
                 switch(level) {
-                    case 1: this.loadShadowRealm(); break;
-                    case 2: this.loadForestKingdom(); break;
-                    case 3: this.loadCrystalCaves(); break;
-                    case 4: this.loadBossArena(); break;
+                    case 1: this.loadShadowRealm1(); break;
+                    case 2: this.loadShadowRealm2(); break;
+                    case 3: this.loadShadowRealm3(); break;
+                    case 4: this.loadForestKingdom1(); break;
+                    case 5: this.loadForestKingdom2(); break;
+                    case 6: this.loadForestKingdom3(); break;
+                    case 7: this.loadCrystalCaves1(); break;
+                    case 8: this.loadCrystalCaves2(); break;
+                    case 9: this.loadCrystalCaves3(); break;
+                    case 10: this.loadBossArena1(); break;
+                    case 11: this.loadBossArena2(); break;
+                    case 12: this.loadFinalBoss(); break;
                 }
                 
                 this.updateUI();
             }
             
-            loadShadowRealm() {
-                // Ground platform
+            // SHADOW REALM LEVELS (1-3)
+            loadShadowRealm1() {
+                // Tutorial level - Introduction to basic mechanics
                 this.platforms.push(new Platform(0, 550, 1000, 50, '#334455'));
-                
-                // Floating platforms
                 this.platforms.push(new Platform(150, 450, 100, 20, '#445566'));
-                this.platforms.push(new Platform(350, 350, 120, 20, '#445566'));
-                this.platforms.push(new Platform(550, 250, 100, 20, '#445566'));
-                this.platforms.push(new Platform(750, 150, 120, 20, '#445566'));
+                this.platforms.push(new Platform(350, 380, 100, 20, '#445566'));
+                this.platforms.push(new Platform(550, 310, 100, 20, '#445566'));
+                this.platforms.push(new Platform(750, 240, 120, 20, '#445566'));
                 
-                // Shadow enemies
+                // Easy enemies
                 this.enemies.push(new Enemy(200, 500, 'shadow'));
-                this.enemies.push(new Enemy(400, 300, 'shadow'));
-                this.enemies.push(new Enemy(600, 200, 'shadow'));
+                this.enemies.push(new Enemy(600, 260, 'shadow'));
                 
-                // Collectibles
+                // Collectibles for energy and tutorial
                 this.collectibles.push(new Orb(180, 420));
-                this.collectibles.push(new Orb(380, 320));
-                this.collectibles.push(new Orb(580, 220));
-                this.collectibles.push(new Orb(780, 120));
-                this.collectibles.push(new Key(800, 120));
+                this.collectibles.push(new Orb(380, 350));
+                this.collectibles.push(new Orb(580, 280));
+                this.collectibles.push(new Orb(800, 210));
+                this.collectibles.push(new Key(850, 210));
             }
             
-            loadForestKingdom() {
-                // Organic platforms
+            loadShadowRealm2() {
+                // Increased difficulty with more enemies
+                this.platforms.push(new Platform(0, 550, 1000, 50, '#334455'));
+                this.platforms.push(new Platform(120, 470, 80, 15, '#445566'));
+                this.platforms.push(new Platform(260, 400, 90, 15, '#445566'));
+                this.platforms.push(new Platform(400, 330, 85, 15, '#445566'));
+                this.platforms.push(new Platform(540, 260, 95, 15, '#445566'));
+                this.platforms.push(new Platform(680, 190, 100, 15, '#445566'));
+                this.platforms.push(new Platform(820, 140, 140, 15, '#445566'));
+                
+                // More enemies with varied placement
+                this.enemies.push(new Enemy(180, 500, 'shadow'));
+                this.enemies.push(new Enemy(320, 430, 'shadow'));
+                this.enemies.push(new Enemy(460, 360, 'shadow'));
+                this.enemies.push(new Enemy(600, 290, 'shadow'));
+                this.enemies.push(new Enemy(740, 220, 'shadow'));
+                
+                // Environmental hazards (spikes)
+                this.hazards = [];
+                this.hazards.push(new Hazard(230, 530, 40, 20, 'spike'));
+                this.hazards.push(new Hazard(500, 530, 50, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(150, 440));
+                this.collectibles.push(new Orb(290, 370));
+                this.collectibles.push(new Orb(430, 300));
+                this.collectibles.push(new Orb(570, 230));
+                this.collectibles.push(new Orb(710, 160));
+                this.collectibles.push(new Key(900, 110));
+            }
+            
+            loadShadowRealm3() {
+                // Challenge level with moving platforms
+                this.platforms.push(new Platform(0, 550, 200, 50, '#334455'));
+                this.platforms.push(new Platform(800, 550, 200, 50, '#334455'));
+                
+                // Create moving platforms
+                this.movingPlatforms = [];
+                this.movingPlatforms.push(new MovingPlatform(250, 480, 90, 15, '#445566', 250, 450, 2, true));
+                this.movingPlatforms.push(new MovingPlatform(450, 380, 90, 15, '#445566', 450, 650, 2.5, true));
+                this.movingPlatforms.push(new MovingPlatform(300, 280, 80, 15, '#445566', 300, 500, 2, true));
+                this.movingPlatforms.push(new MovingPlatform(600, 200, 100, 15, '#445566', 600, 750, 3, true));
+                
+                // Tough enemies
+                this.enemies.push(new Enemy(100, 500, 'shadow'));
+                this.enemies.push(new Enemy(850, 500, 'shadow'));
+                this.enemies.push(new FastEnemy(450, 380, 'shadow'));
+                this.enemies.push(new FastEnemy(650, 200, 'shadow'));
+                
+                // Hazards
+                this.hazards = [];
+                this.hazards.push(new Hazard(210, 530, 30, 20, 'spike'));
+                this.hazards.push(new Hazard(770, 530, 30, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(280, 450));
+                this.collectibles.push(new Orb(480, 350));
+                this.collectibles.push(new Orb(330, 250));
+                this.collectibles.push(new Orb(630, 170));
+                this.collectibles.push(new Key(700, 170));
+            }
+            
+            // FOREST KINGDOM LEVELS (4-6)
+            loadForestKingdom1() {
+                // Introduction to forest biome
                 this.platforms.push(new Platform(0, 550, 1000, 50, '#2d5a2d'));
-                this.platforms.push(new Platform(100, 480, 80, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(250, 420, 90, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(400, 360, 100, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(550, 300, 85, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(700, 240, 110, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(850, 180, 120, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(100, 470, 90, 18, '#3d6a3d'));
+                this.platforms.push(new Platform(250, 400, 100, 18, '#3d6a3d'));
+                this.platforms.push(new Platform(400, 330, 110, 18, '#3d6a3d'));
+                this.platforms.push(new Platform(560, 260, 100, 18, '#3d6a3d'));
+                this.platforms.push(new Platform(720, 190, 120, 18, '#3d6a3d'));
                 
-                // Forest enemies
-                this.enemies.push(new Enemy(150, 450, 'forest'));
-                this.enemies.push(new Enemy(320, 390, 'forest'));
-                this.enemies.push(new Enemy(480, 330, 'forest'));
-                this.enemies.push(new Enemy(630, 270, 'forest'));
+                this.enemies.push(new Enemy(150, 440, 'forest'));
+                this.enemies.push(new Enemy(320, 370, 'forest'));
+                this.enemies.push(new Enemy(480, 300, 'forest'));
+                this.enemies.push(new TankEnemy(620, 230, 'forest'));
                 
-                // Forest collectibles
-                this.collectibles.push(new Orb(130, 450));
-                this.collectibles.push(new Orb(280, 390));
-                this.collectibles.push(new Orb(430, 330));
-                this.collectibles.push(new Orb(580, 270));
-                this.collectibles.push(new Key(900, 150));
+                this.collectibles.push(new Orb(130, 440));
+                this.collectibles.push(new Orb(280, 370));
+                this.collectibles.push(new Orb(430, 300));
+                this.collectibles.push(new Orb(590, 230));
+                this.collectibles.push(new Orb(750, 160));
+                this.collectibles.push(new Key(820, 160));
             }
             
-            loadCrystalCaves() {
-                // Crystal platforms
+            loadForestKingdom2() {
+                // Vertical climbing challenge
+                this.platforms.push(new Platform(0, 550, 300, 50, '#2d5a2d'));
+                this.platforms.push(new Platform(700, 550, 300, 50, '#2d5a2d'));
+                this.platforms.push(new Platform(350, 490, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(500, 430, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(350, 370, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(500, 310, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(350, 250, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(500, 190, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(650, 130, 150, 15, '#3d6a3d'));
+                
+                this.enemies.push(new Enemy(100, 500, 'forest'));
+                this.enemies.push(new FastEnemy(380, 460, 'forest'));
+                this.enemies.push(new FastEnemy(530, 400, 'forest'));
+                this.enemies.push(new TankEnemy(750, 500, 'forest'));
+                
+                // Moving platforms
+                this.movingPlatforms = [];
+                this.movingPlatforms.push(new MovingPlatform(600, 340, 70, 15, '#3d6a3d', 300, 200, 0, 400, 2, false));
+                
+                this.hazards = [];
+                this.hazards.push(new Hazard(310, 530, 40, 20, 'spike'));
+                this.hazards.push(new Hazard(590, 530, 100, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(380, 460));
+                this.collectibles.push(new Orb(530, 400));
+                this.collectibles.push(new Orb(380, 340));
+                this.collectibles.push(new Orb(530, 280));
+                this.collectibles.push(new Orb(700, 100));
+                this.collectibles.push(new Key(750, 100));
+            }
+            
+            loadForestKingdom3() {
+                // Complex platforming with multiple paths
+                this.platforms.push(new Platform(0, 550, 150, 50, '#2d5a2d'));
+                this.platforms.push(new Platform(850, 550, 150, 50, '#2d5a2d'));
+                
+                // Upper path
+                this.platforms.push(new Platform(180, 400, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(320, 330, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(460, 260, 80, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(600, 190, 100, 15, '#3d6a3d'));
+                
+                // Lower path
+                this.platforms.push(new Platform(180, 500, 70, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(320, 480, 70, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(460, 460, 70, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(600, 440, 70, 15, '#3d6a3d'));
+                this.platforms.push(new Platform(740, 420, 80, 15, '#3d6a3d'));
+                
+                this.enemies.push(new FastEnemy(210, 370, 'forest'));
+                this.enemies.push(new FastEnemy(350, 300, 'forest'));
+                this.enemies.push(new TankEnemy(210, 470, 'forest'));
+                this.enemies.push(new TankEnemy(490, 430, 'forest'));
+                this.enemies.push(new Enemy(900, 500, 'forest'));
+                
+                this.hazards = [];
+                this.hazards.push(new Hazard(260, 530, 60, 20, 'spike'));
+                this.hazards.push(new Hazard(540, 530, 80, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(210, 370));
+                this.collectibles.push(new Orb(350, 300));
+                this.collectibles.push(new Orb(490, 230));
+                this.collectibles.push(new Orb(630, 160));
+                this.collectibles.push(new Orb(390, 450));
+                this.collectibles.push(new Key(920, 490));
+            }
+            
+            // CRYSTAL CAVES LEVELS (7-9)
+            loadCrystalCaves1() {
+                // Introduction to crystal biome with tougher enemies
                 this.platforms.push(new Platform(0, 550, 1000, 50, '#442244'));
-                this.platforms.push(new Platform(120, 480, 100, 20, '#553355'));
-                this.platforms.push(new Platform(280, 420, 90, 20, '#553355'));
-                this.platforms.push(new Platform(430, 360, 110, 20, '#553355'));
-                this.platforms.push(new Platform(580, 300, 100, 20, '#553355'));
-                this.platforms.push(new Platform(730, 240, 120, 20, '#553355'));
+                this.platforms.push(new Platform(120, 470, 100, 22, '#553355'));
+                this.platforms.push(new Platform(280, 390, 100, 22, '#553355'));
+                this.platforms.push(new Platform(440, 310, 100, 22, '#553355'));
+                this.platforms.push(new Platform(600, 230, 100, 22, '#553355'));
+                this.platforms.push(new Platform(760, 150, 140, 22, '#553355'));
                 
-                // Crystal enemies (tougher)
-                this.enemies.push(new Enemy(180, 450, 'crystal'));
-                this.enemies.push(new Enemy(350, 390, 'crystal'));
-                this.enemies.push(new Enemy(500, 330, 'crystal'));
-                this.enemies.push(new Enemy(650, 270, 'crystal'));
+                this.enemies.push(new TankEnemy(160, 440, 'crystal'));
+                this.enemies.push(new FastEnemy(320, 360, 'crystal'));
+                this.enemies.push(new TankEnemy(480, 280, 'crystal'));
+                this.enemies.push(new FastEnemy(640, 200, 'crystal'));
                 
-                // Crystal collectibles
-                this.collectibles.push(new Orb(150, 450));
-                this.collectibles.push(new Orb(310, 390));
-                this.collectibles.push(new Orb(460, 330));
-                this.collectibles.push(new Orb(610, 270));
-                this.collectibles.push(new Key(780, 210));
+                this.hazards = [];
+                this.hazards.push(new Hazard(240, 530, 30, 20, 'spike'));
+                this.hazards.push(new Hazard(400, 530, 30, 20, 'spike'));
+                this.hazards.push(new Hazard(560, 530, 30, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(150, 440));
+                this.collectibles.push(new Orb(310, 360));
+                this.collectibles.push(new Orb(470, 280));
+                this.collectibles.push(new Orb(630, 200));
+                this.collectibles.push(new Orb(820, 120));
+                this.collectibles.push(new Key(860, 120));
             }
             
-            loadBossArena() {
-                // Boss arena platforms
+            loadCrystalCaves2() {
+                // Precision platforming challenge
+                this.platforms.push(new Platform(0, 550, 100, 50, '#442244'));
+                this.platforms.push(new Platform(900, 550, 100, 50, '#442244'));
+                
+                // Small precise platforms
+                this.platforms.push(new Platform(130, 490, 60, 12, '#553355'));
+                this.platforms.push(new Platform(230, 450, 60, 12, '#553355'));
+                this.platforms.push(new Platform(330, 410, 60, 12, '#553355'));
+                this.platforms.push(new Platform(430, 370, 60, 12, '#553355'));
+                this.platforms.push(new Platform(530, 330, 60, 12, '#553355'));
+                this.platforms.push(new Platform(630, 290, 60, 12, '#553355'));
+                this.platforms.push(new Platform(730, 250, 60, 12, '#553355'));
+                this.platforms.push(new Platform(820, 210, 80, 12, '#553355'));
+                
+                // Moving platforms
+                this.movingPlatforms = [];
+                this.movingPlatforms.push(new MovingPlatform(500, 500, 70, 12, '#553355', 500, 700, 2.5, true));
+                this.movingPlatforms.push(new MovingPlatform(200, 180, 70, 12, '#553355', 200, 400, 3, true));
+                
+                this.enemies.push(new FastEnemy(160, 460, 'crystal'));
+                this.enemies.push(new FastEnemy(360, 380, 'crystal'));
+                this.enemies.push(new FastEnemy(560, 300, 'crystal'));
+                this.enemies.push(new FastEnemy(760, 220, 'crystal'));
+                
+                this.hazards = [];
+                this.hazards.push(new Hazard(110, 530, 800, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(160, 460));
+                this.collectibles.push(new Orb(360, 380));
+                this.collectibles.push(new Orb(560, 300));
+                this.collectibles.push(new Orb(760, 220));
+                this.collectibles.push(new Key(850, 180));
+            }
+            
+            loadCrystalCaves3() {
+                // Final crystal cave gauntlet
+                this.platforms.push(new Platform(0, 550, 200, 50, '#442244'));
+                this.platforms.push(new Platform(800, 550, 200, 50, '#442244'));
+                
+                // Complex platform layout
+                this.platforms.push(new Platform(220, 480, 80, 18, '#553355'));
+                this.platforms.push(new Platform(350, 420, 70, 18, '#553355'));
+                this.platforms.push(new Platform(470, 360, 80, 18, '#553355'));
+                this.platforms.push(new Platform(600, 300, 70, 18, '#553355'));
+                this.platforms.push(new Platform(720, 240, 80, 18, '#553355'));
+                
+                // Additional mid-level platforms
+                this.platforms.push(new Platform(300, 520, 50, 15, '#553355'));
+                this.platforms.push(new Platform(500, 500, 50, 15, '#553355'));
+                this.platforms.push(new Platform(650, 480, 50, 15, '#553355'));
+                
+                // Mixed enemy types
+                this.enemies.push(new TankEnemy(100, 500, 'crystal'));
+                this.enemies.push(new FastEnemy(250, 450, 'crystal'));
+                this.enemies.push(new TankEnemy(380, 390, 'crystal'));
+                this.enemies.push(new FastEnemy(500, 330, 'crystal'));
+                this.enemies.push(new TankEnemy(630, 270, 'crystal'));
+                this.enemies.push(new FastEnemy(750, 210, 'crystal'));
+                this.enemies.push(new TankEnemy(850, 500, 'crystal'));
+                
+                // Moving platforms
+                this.movingPlatforms = [];
+                this.movingPlatforms.push(new MovingPlatform(400, 200, 80, 15, '#553355', 300, 150, 0, 350, 2, false));
+                
+                this.hazards = [];
+                this.hazards.push(new Hazard(210, 530, 40, 20, 'spike'));
+                this.hazards.push(new Hazard(420, 530, 60, 20, 'spike'));
+                this.hazards.push(new Hazard(560, 530, 50, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(250, 450));
+                this.collectibles.push(new Orb(380, 390));
+                this.collectibles.push(new Orb(500, 330));
+                this.collectibles.push(new Orb(630, 270));
+                this.collectibles.push(new Orb(750, 210));
+                this.collectibles.push(new Key(900, 490));
+            }
+            
+            // BOSS ARENA LEVELS (10-12)
+            loadBossArena1() {
+                // Pre-boss gauntlet
                 this.platforms.push(new Platform(0, 550, 1000, 50, '#552222'));
-                this.platforms.push(new Platform(100, 450, 80, 20, '#663333'));
-                this.platforms.push(new Platform(300, 400, 100, 20, '#663333'));
-                this.platforms.push(new Platform(500, 350, 120, 20, '#663333'));
-                this.platforms.push(new Platform(700, 400, 100, 20, '#663333'));
-                this.platforms.push(new Platform(850, 450, 80, 20, '#663333'));
+                this.platforms.push(new Platform(100, 470, 80, 18, '#663333'));
+                this.platforms.push(new Platform(230, 410, 80, 18, '#663333'));
+                this.platforms.push(new Platform(360, 350, 80, 18, '#663333'));
+                this.platforms.push(new Platform(490, 290, 80, 18, '#663333'));
+                this.platforms.push(new Platform(620, 350, 80, 18, '#663333'));
+                this.platforms.push(new Platform(750, 410, 80, 18, '#663333'));
+                this.platforms.push(new Platform(880, 470, 80, 18, '#663333'));
                 
-                // Shadow King boss
-                this.enemies.push(new ShadowKing(500, 250));
+                // Elite enemies
+                this.enemies.push(new TankEnemy(140, 440, 'boss'));
+                this.enemies.push(new FastEnemy(270, 380, 'boss'));
+                this.enemies.push(new TankEnemy(400, 320, 'boss'));
+                this.enemies.push(new FastEnemy(530, 260, 'boss'));
+                this.enemies.push(new TankEnemy(660, 320, 'boss'));
+                this.enemies.push(new FastEnemy(790, 380, 'boss'));
+                this.enemies.push(new TankEnemy(920, 440, 'boss'));
                 
-                // Final collectibles
+                this.hazards = [];
+                this.hazards.push(new Hazard(190, 530, 30, 20, 'spike'));
+                this.hazards.push(new Hazard(330, 530, 30, 20, 'spike'));
+                this.hazards.push(new Hazard(570, 530, 30, 20, 'spike'));
+                this.hazards.push(new Hazard(710, 530, 30, 20, 'spike'));
+                this.hazards.push(new Hazard(850, 530, 30, 20, 'spike'));
+                
+                this.collectibles.push(new Orb(140, 440));
+                this.collectibles.push(new Orb(270, 380));
+                this.collectibles.push(new Orb(400, 320));
+                this.collectibles.push(new Orb(530, 260));
+                this.collectibles.push(new Orb(660, 320));
+                this.collectibles.push(new Key(920, 440));
+            }
+            
+            loadBossArena2() {
+                // Mini-boss battle
+                this.platforms.push(new Platform(0, 550, 1000, 50, '#552222'));
+                this.platforms.push(new Platform(100, 450, 100, 20, '#663333'));
+                this.platforms.push(new Platform(300, 380, 120, 20, '#663333'));
+                this.platforms.push(new Platform(500, 320, 140, 20, '#663333'));
+                this.platforms.push(new Platform(700, 380, 120, 20, '#663333'));
+                this.platforms.push(new Platform(850, 450, 100, 20, '#663333'));
+                
+                // Mini-boss
+                this.enemies.push(new MiniBoss(500, 250));
+                
+                // Support enemies
+                this.enemies.push(new FastEnemy(150, 420, 'boss'));
+                this.enemies.push(new FastEnemy(850, 420, 'boss'));
+                
                 this.collectibles.push(new Orb(150, 420));
-                this.collectibles.push(new Orb(350, 370));
-                this.collectibles.push(new Orb(750, 370));
-                this.collectibles.push(new Key(900, 420));
+                this.collectibles.push(new Orb(350, 350));
+                this.collectibles.push(new Orb(750, 350));
+                this.collectibles.push(new Orb(900, 420));
+                this.collectibles.push(new Key(550, 290));
+            }
+            
+            loadFinalBoss() {
+                // Final boss arena
+                this.platforms.push(new Platform(0, 550, 1000, 50, '#552222'));
+                this.platforms.push(new Platform(80, 450, 90, 20, '#663333'));
+                this.platforms.push(new Platform(250, 380, 100, 20, '#663333'));
+                this.platforms.push(new Platform(450, 320, 110, 20, '#663333'));
+                this.platforms.push(new Platform(650, 380, 100, 20, '#663333'));
+                this.platforms.push(new Platform(830, 450, 90, 20, '#663333'));
+                
+                // Shadow King final form
+                this.enemies.push(new ShadowKing(500, 200));
+                
+                this.collectibles.push(new Orb(120, 420));
+                this.collectibles.push(new Orb(290, 350));
+                this.collectibles.push(new Orb(490, 290));
+                this.collectibles.push(new Orb(690, 350));
+                this.collectibles.push(new Orb(870, 420));
+                this.collectibles.push(new Key(530, 290));
             }
             
             update(deltaTime) {
@@ -343,8 +629,21 @@
                 // Update player
                 this.player.update(this.keys, deltaTime);
                 
+                // Update moving platforms
+                for (let platform of this.movingPlatforms) {
+                    platform.update(deltaTime);
+                }
+                
                 // Check platform collisions
                 this.checkPlatformCollisions();
+                
+                // Check hazard collisions
+                for (let hazard of this.hazards) {
+                    if (this.checkCollision(this.player, hazard) && !this.player.invulnerable) {
+                        this.player.takeDamage(30);
+                        this.addScreenShake(5);
+                    }
+                }
                 
                 // Update enemies
                 for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -359,6 +658,11 @@
                             this.addParticleExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ff6666');
                             this.addScreenShake(5);
                             this.score += 100;
+                            
+                            // Achievement check
+                            if (enemy instanceof ShadowKing) {
+                                this.checkAchievement('defeat_boss', 'Shadow King Defeated!');
+                            }
                         } else if (!this.player.invulnerable) {
                             // Player takes damage
                             this.player.takeDamage(25);
@@ -404,6 +708,12 @@
                 
                 // Check level completion
                 if (this.collectibles.filter(c => c instanceof Key).length === 0) {
+                    // Achievement checks
+                    if (this.currentLevel === 3) this.checkAchievement('complete_shadow', 'Shadow Realm Complete!');
+                    if (this.currentLevel === 6) this.checkAchievement('complete_forest', 'Forest Kingdom Complete!');
+                    if (this.currentLevel === 9) this.checkAchievement('complete_crystal', 'Crystal Caves Complete!');
+                    if (this.player.health === this.player.maxHealth) this.checkAchievement('no_damage', 'Flawless Victory!');
+                    
                     this.completeLevel();
                 }
                 
@@ -418,7 +728,9 @@
             checkPlatformCollisions() {
                 this.player.grounded = false;
                 
-                for (let platform of this.platforms) {
+                // Check static platforms
+                const allPlatforms = [...this.platforms, ...this.movingPlatforms];
+                for (let platform of allPlatforms) {
                     if (this.checkCollision(this.player, platform)) {
                         // Calculate overlap
                         const overlapX = Math.min(
@@ -543,10 +855,17 @@
             }
             
             completeLevel() {
+                // Save progress
+                this.saveProgress();
+                
                 if (this.currentLevel < this.maxLevel) {
                     this.gameState = 'levelComplete';
                     document.getElementById('levelCompleteScreen').classList.remove('hidden');
-                    const levelNames = ['', 'Shadow Realm', 'Forest Kingdom', 'Crystal Caves', 'Boss Arena'];
+                    const levelNames = ['', 
+                        'Shadow Realm 1', 'Shadow Realm 2', 'Shadow Realm 3',
+                        'Forest Kingdom 1', 'Forest Kingdom 2', 'Forest Kingdom 3',
+                        'Crystal Caves 1', 'Crystal Caves 2', 'Crystal Caves 3',
+                        'Boss Arena 1', 'Boss Arena 2', 'Final Boss'];
                     document.getElementById('levelCompleteText').textContent = `Moving to ${levelNames[this.currentLevel + 1]}...`;
                 } else {
                     this.victory();
@@ -555,12 +874,79 @@
             
             victory() {
                 this.gameState = 'victory';
+                
+                // Update high score
+                const isNewHighScore = this.score > this.highScore;
+                if (isNewHighScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('echoRealmsHighScore', this.highScore);
+                }
+                
+                // Check achievements
+                this.checkAchievement('complete_game', 'Game Completed!');
+                if (this.score > 5000) this.checkAchievement('high_score', 'Score Master!');
+                
+                // Update victory screen
+                document.getElementById('finalScore').textContent = `Final Score: ${this.score}`;
+                document.getElementById('highScoreDisplay').textContent = isNewHighScore 
+                    ? `🎉 NEW HIGH SCORE! 🎉` 
+                    : `High Score: ${this.highScore}`;
+                
                 document.getElementById('victoryScreen').classList.remove('hidden');
             }
             
             gameOver() {
                 this.gameState = 'gameOver';
                 document.getElementById('gameOverScreen').classList.remove('hidden');
+            }
+            
+            saveProgress() {
+                const progress = {
+                    currentLevel: this.currentLevel,
+                    highScore: this.highScore,
+                    score: this.score
+                };
+                localStorage.setItem('echoRealmsProgress', JSON.stringify(progress));
+            }
+            
+            loadProgress() {
+                const saved = localStorage.getItem('echoRealmsProgress');
+                if (saved) {
+                    const progress = JSON.parse(saved);
+                    return progress;
+                }
+                return null;
+            }
+            
+            checkAchievement(id, name) {
+                if (!this.achievements.includes(id)) {
+                    this.achievements.push(id);
+                    localStorage.setItem('echoRealmsAchievements', JSON.stringify(this.achievements));
+                    this.showAchievementNotification(name);
+                }
+            }
+            
+            showAchievementNotification(name) {
+                // Create achievement popup
+                const popup = document.createElement('div');
+                popup.style.position = 'fixed';
+                popup.style.top = '80px';
+                popup.style.right = '20px';
+                popup.style.background = 'rgba(0, 200, 100, 0.9)';
+                popup.style.color = 'white';
+                popup.style.padding = '15px 20px';
+                popup.style.borderRadius = '8px';
+                popup.style.fontFamily = 'monospace';
+                popup.style.zIndex = '2000';
+                popup.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+                popup.innerHTML = `<strong>🏆 Achievement!</strong><br>${name}`;
+                document.body.appendChild(popup);
+                
+                setTimeout(() => {
+                    popup.style.transition = 'opacity 0.5s';
+                    popup.style.opacity = '0';
+                    setTimeout(() => document.body.removeChild(popup), 500);
+                }, 3000);
             }
             
             updateUI() {
@@ -581,10 +967,10 @@
             render() {
                 // Clear canvas with biome background
                 const biomeColors = {
-                    1: ['#001a33', '#002266'], // Shadow Realm
-                    2: ['#001a00', '#003300'], // Forest Kingdom
-                    3: ['#1a001a', '#330033'], // Crystal Caves
-                    4: ['#1a0000', '#330000']  // Boss Arena
+                    1: ['#001a33', '#002266'], 2: ['#001a33', '#002266'], 3: ['#001a33', '#002266'], // Shadow Realm
+                    4: ['#001a00', '#003300'], 5: ['#001a00', '#003300'], 6: ['#001a00', '#003300'], // Forest Kingdom
+                    7: ['#1a001a', '#330033'], 8: ['#1a001a', '#330033'], 9: ['#1a001a', '#330033'], // Crystal Caves
+                    10: ['#1a0000', '#330000'], 11: ['#1a0000', '#330000'], 12: ['#1a0000', '#330000'] // Boss Arena
                 };
                 
                 const colors = biomeColors[this.currentLevel] || biomeColors[1];
@@ -603,6 +989,16 @@
                 // Render platforms
                 for (let platform of this.platforms) {
                     platform.render(this.ctx);
+                }
+                
+                // Render moving platforms
+                for (let platform of this.movingPlatforms) {
+                    platform.render(this.ctx);
+                }
+                
+                // Render hazards
+                for (let hazard of this.hazards) {
+                    hazard.render(this.ctx);
                 }
                 
                 // Render collectibles
@@ -882,17 +1278,143 @@
             }
         }
         
+        // Fast Enemy - Quick and agile
+        class FastEnemy extends Enemy {
+            constructor(x, y, type) {
+                super(x, y, type);
+                this.vx = 3.5;
+                this.health = 30;
+                this.width = 24;
+                this.height = 32;
+                this.patrolRange = 200;
+            }
+            
+            render(ctx) {
+                // Draw a sleeker, faster-looking enemy
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x + 4, this.y, 16, 28);
+                ctx.fillRect(this.x, this.y + 8, 24, 16);
+                
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 12;
+                ctx.fillRect(this.x + 4, this.y, 16, 28);
+                ctx.shadowBlur = 0;
+                
+                // Eyes
+                ctx.fillStyle = '#ff6666';
+                ctx.fillRect(this.x + 5, this.y + 6, 3, 3);
+                ctx.fillRect(this.x + 16, this.y + 6, 3, 3);
+            }
+        }
+        
+        // Tank Enemy - Slow but tough
+        class TankEnemy extends Enemy {
+            constructor(x, y, type) {
+                super(x, y, type);
+                this.vx = 1;
+                this.health = 100;
+                this.width = 36;
+                this.height = 44;
+                this.patrolRange = 100;
+            }
+            
+            render(ctx) {
+                // Draw a bulkier, tougher enemy
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y + 4, 36, 36);
+                ctx.fillRect(this.x + 6, this.y, 24, 40);
+                
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 8;
+                ctx.fillRect(this.x, this.y + 4, 36, 36);
+                ctx.shadowBlur = 0;
+                
+                // Eyes
+                ctx.fillStyle = '#ff4444';
+                ctx.fillRect(this.x + 8, this.y + 10, 5, 5);
+                ctx.fillRect(this.x + 23, this.y + 10, 5, 5);
+                
+                // Health bar
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(this.x, this.y - 8, 36, 4);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(this.x, this.y - 8, 36 * (this.health / 100), 4);
+            }
+        }
+        
+        // Mini-Boss
+        class MiniBoss extends Enemy {
+            constructor(x, y) {
+                super(x, y, 'boss');
+                this.width = 52;
+                this.height = 64;
+                this.health = 150;
+                this.maxHealth = 150;
+                this.color = '#cc4422';
+                this.attackTimer = 0;
+                this.vx = 1.5;
+                this.patrolRange = 200;
+            }
+            
+            update(deltaTime) {
+                this.attackTimer += deltaTime;
+                
+                if (this.attackTimer > 2000) {
+                    this.attack();
+                    this.attackTimer = 0;
+                }
+                
+                super.update(deltaTime);
+            }
+            
+            attack() {
+                // Create projectiles
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI * 2 / 6) * i;
+                    game.addParticleExplosion(
+                        this.x + this.width/2,
+                        this.y + this.height/2,
+                        this.color
+                    );
+                }
+                game.addScreenShake(4);
+            }
+            
+            render(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.shadowBlur = 0;
+                
+                // Eyes
+                ctx.fillStyle = '#ff2222';
+                ctx.fillRect(this.x + 10, this.y + 12, 6, 6);
+                ctx.fillRect(this.x + 36, this.y + 12, 6, 6);
+                
+                // Health bar
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(this.x - 10, this.y - 15, this.width + 20, 8);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - 10, this.y - 15, (this.width + 20) * (this.health / this.maxHealth), 8);
+            }
+        }
+        
         // Shadow King Boss
         class ShadowKing extends Enemy {
             constructor(x, y) {
                 super(x, y, 'boss');
                 this.width = 64;
                 this.height = 80;
-                this.health = 200;
-                this.maxHealth = 200;
+                this.health = 250;
+                this.maxHealth = 250;
                 this.color = '#aa2222';
                 this.attackTimer = 0;
                 this.phase = 1;
+                this.vx = 1.2;
+                this.patrolRange = 180;
             }
             
             update(deltaTime) {
@@ -902,13 +1424,16 @@
                 if (this.health < this.maxHealth * 0.66 && this.phase === 1) {
                     this.phase = 2;
                     this.color = '#cc4444';
+                    this.vx = 1.8;
                 } else if (this.health < this.maxHealth * 0.33 && this.phase === 2) {
                     this.phase = 3;
                     this.color = '#ff6666';
+                    this.vx = 2.5;
                 }
                 
-                // Attack patterns
-                if (this.attackTimer > 1500) {
+                // Attack patterns - more aggressive
+                const attackRate = 1800 - (this.phase * 300);
+                if (this.attackTimer > attackRate) {
                     this.attack();
                     this.attackTimer = 0;
                 }
@@ -918,7 +1443,7 @@
             
             attack() {
                 // Create shadow projectiles in multiple directions
-                const projectileCount = this.phase + 3;
+                const projectileCount = this.phase + 4;
                 for (let i = 0; i < projectileCount; i++) {
                     const angle = (Math.PI * 2 / projectileCount) * i;
                     game.addParticleExplosion(
@@ -927,7 +1452,7 @@
                         this.color
                     );
                 }
-                game.addScreenShake(3);
+                game.addScreenShake(3 + this.phase);
             }
             
             render(ctx) {
@@ -939,12 +1464,93 @@
                 ctx.fillStyle = this.color;
                 ctx.fillRect(this.x - 20, this.y - 30, (this.width + 40) * (this.health / this.maxHealth), 12);
                 
+                // Phase indicator
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px monospace';
+                ctx.fillText(`Phase ${this.phase}`, this.x + 10, this.y - 35);
+                
                 // Crown
                 ctx.fillStyle = '#ffdd00';
                 ctx.fillRect(this.x + 20, this.y - 15, 24, 8);
                 ctx.fillRect(this.x + 22, this.y - 20, 4, 8);
                 ctx.fillRect(this.x + 30, this.y - 25, 4, 13);
                 ctx.fillRect(this.x + 38, this.y - 20, 4, 8);
+            }
+        }
+        
+        // Moving Platform
+        class MovingPlatform {
+            constructor(x, y, width, height, color, minX, maxX, minY, maxY, speed, horizontal) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+                this.minX = minX;
+                this.maxX = maxX;
+                this.minY = minY || y;
+                this.maxY = maxY || y;
+                this.speed = speed;
+                this.horizontal = horizontal;
+                this.direction = 1;
+            }
+            
+            update(deltaTime) {
+                if (this.horizontal) {
+                    this.x += this.speed * this.direction;
+                    if (this.x <= this.minX || this.x >= this.maxX) {
+                        this.direction *= -1;
+                    }
+                } else {
+                    this.y += this.speed * this.direction;
+                    if (this.y <= this.minY || this.y >= this.maxY) {
+                        this.direction *= -1;
+                    }
+                }
+            }
+            
+            render(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Moving indicator
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+                ctx.setLineDash([]);
+            }
+        }
+        
+        // Hazard (Spikes, etc.)
+        class Hazard {
+            constructor(x, y, width, height, type) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.type = type;
+                this.color = '#ff3333';
+            }
+            
+            render(ctx) {
+                if (this.type === 'spike') {
+                    ctx.fillStyle = this.color;
+                    const spikeCount = Math.floor(this.width / 10);
+                    for (let i = 0; i < spikeCount; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(this.x + i * 10, this.y + this.height);
+                        ctx.lineTo(this.x + i * 10 + 5, this.y);
+                        ctx.lineTo(this.x + i * 10 + 10, this.y + this.height);
+                        ctx.fill();
+                    }
+                    
+                    // Glow
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = 10;
+                    ctx.fillRect(this.x, this.y + this.height - 2, this.width, 2);
+                    ctx.shadowBlur = 0;
+                }
             }
         }
         

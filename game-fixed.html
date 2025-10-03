@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoRealms: Shadow Odyssey - WORKING VERSION</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0d001a 0%, #1a0033 50%, #2a1040 100%);
+            font-family: 'Arial', sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 1000px;
+            height: 700px;
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.6);
+            background: linear-gradient(to bottom, #0d001a 0%, #1a0033 100%);
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(13, 0, 26, 0.96) 0%, rgba(26, 0, 51, 0.98) 50%, rgba(42, 16, 64, 0.96) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 40px;
+            backdrop-filter: blur(15px);
+        }
+        
+        .screen.hidden {
+            display: none;
+        }
+        
+        .screen h1 {
+            font-size: 3rem;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            margin-bottom: 20px;
+            text-align: center;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
+            to { text-shadow: 0 0 30px rgba(0, 255, 255, 0.8), 0 0 40px rgba(0, 255, 255, 0.4); }
+        }
+        
+        .screen h2 {
+            font-size: 1.5rem;
+            color: #F1C40F;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .screen p {
+            font-size: 1.1rem;
+            color: #cccccc;
+            text-align: center;
+            margin: 10px 0;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #006666 0%, #00aaaa 50%, #00cccc 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:hover {
+            background: linear-gradient(45deg, #008888 0%, #00cccc 50%, #00ffff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 170, 170, 0.4);
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: #00ffff;
+            animation: spin 1s linear infinite;
+            margin: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            border: 1px solid #00ffff;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .ui-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #00ffff;
+            font-size: 14px;
+        }
+        
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff00;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000 0%, #ffff00 50%, #00ff00 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .energy-bar {
+            width: 200px;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #0099ff;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0066cc 0%, #0099ff 100%);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        
+        <!-- UI Overlay -->
+        <div class="ui-overlay">
+            <div class="ui-bar">
+                <div>Health:</div>
+                <div class="health-bar"><div class="health-fill" id="healthFill" style="width: 100%"></div></div>
+                <div>Energy:</div>
+                <div class="energy-bar"><div class="energy-fill" id="energyFill" style="width: 100%"></div></div>
+                <div id="scoreText">Score: 0</div>
+                <div id="biomeText">Shadow Realm</div>
+            </div>
+        </div>
+        
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="screen">
+            <h1>🌌 EchoRealms: Shadow Odyssey</h1>
+            <div class="loading-spinner"></div>
+            <p>Loading magical realms...</p>
+            <p>Get ready to master your shadow abilities!</p>
+        </div>
+        
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen hidden">
+            <h1>🌌 EchoRealms: Shadow Odyssey</h1>
+            <h2>✨ Master the Shadows, Conquer the Realms ✨</h2>
+            <p>Use WASD/Arrows to move, X to dash, C for time slow, Z for ground slam!</p>
+            <button class="btn" onclick="startGame()">🚀 Start Adventure</button>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="screen hidden">
+            <h1>💀 Game Over</h1>
+            <div id="finalScore">Final Score: 0</div>
+            <p>Press R to restart or click the button below!</p>
+            <button class="btn" onclick="startGame()">🔄 Try Again</button>
+        </div>
+        
+        <!-- Victory Screen -->
+        <div id="victoryScreen" class="screen hidden">
+            <h1>🎉 Victory!</h1>
+            <h2>✨ You conquered all biomes! ✨</h2>
+            <div id="victoryScore">Final Score: 0</div>
+            <button class="btn" onclick="startGame()">🔄 Play Again</button>
+        </div>
+        
+        <!-- Controls Info -->
+        <div class="controls-info">
+            <strong>Controls:</strong><br>
+            WASD/Arrows: Move<br>
+            X: Dash | C: Time Slow<br>
+            Z: Ground Slam | R: Restart
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+    <script>
+        // Game Manager
+        class GameManager {
+            constructor() {
+                this.gameState = 'loading';
+                this.currentScreen = 'loadingScreen';
+                this.playerScore = 0;
+                this.startLoadSequence();
+            }
+            
+            startLoadSequence() {
+                console.log('🎮 EchoRealms: Initializing...');
+                setTimeout(() => {
+                    this.showScreen('startScreen');
+                    this.gameState = 'menu';
+                    console.log('✨ Game ready! Click Start Adventure to play!');
+                }, 2000);
+            }
+            
+            showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.add('hidden');
+                });
+                const screen = document.getElementById(screenId);
+                if (screen) {
+                    screen.classList.remove('hidden');
+                    this.currentScreen = screenId;
+                }
+            }
+            
+            hideAllScreens() {
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.add('hidden');
+                });
+                this.currentScreen = null;
+            }
+            
+            showGameOver(score) {
+                this.playerScore = score;
+                document.getElementById('finalScore').textContent = `Final Score: ${score}`;
+                this.showScreen('gameOverScreen');
+                this.gameState = 'gameOver';
+            }
+            
+            showVictory(score) {
+                this.playerScore = score;
+                document.getElementById('victoryScore').textContent = `Final Score: ${score}`;
+                this.showScreen('victoryScreen');
+                this.gameState = 'victory';
+            }
+        }
+        
+        // Game Scene
+        class GameScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'GameScene' });
+            }
+            
+            create() {
+                // World bounds
+                this.physics.world.setBounds(0, 0, 2000, 700);
+                this.physics.world.gravity.y = 600;
+                
+                // Camera
+                this.cameras.main.setBounds(0, 0, 2000, 700);
+                this.cameras.main.setBackgroundColor('#0d001a');
+                
+                // Create groups
+                this.platforms = this.physics.add.staticGroup();
+                this.enemies = this.physics.add.group();
+                this.collectibles = this.physics.add.group();
+                
+                // Create ground and platforms
+                this.createLevel();
+                
+                // Create player
+                this.player = new Player(this, 100, 600);
+                
+                // Physics
+                this.physics.add.collider(this.player, this.platforms);
+                this.physics.add.collider(this.enemies, this.platforms);
+                this.physics.add.overlap(this.player, this.enemies, this.playerHitEnemy, null, this);
+                this.physics.add.overlap(this.player, this.collectibles, this.playerCollectItem, null, this);
+                
+                // Camera follow
+                this.cameras.main.startFollow(this.player);
+                
+                // Controls
+                this.cursors = this.input.keyboard.createCursorKeys();
+                this.wasd = this.input.keyboard.addKeys('W,S,A,D,X,C,Z,R');
+                
+                console.log('🌌 Game world created! Start playing!');
+            }
+            
+            createLevel() {
+                // Main ground
+                this.createPlatform(0, 680, 2000, 20, 0x2C3E50);
+                
+                // Platforms
+                this.createPlatform(200, 580, 150, 20, 0x34495E);
+                this.createPlatform(450, 480, 120, 20, 0x34495E);
+                this.createPlatform(650, 380, 140, 20, 0x34495E);
+                this.createPlatform(900, 280, 160, 20, 0x34495E);
+                this.createPlatform(1200, 380, 120, 20, 0x34495E);
+                this.createPlatform(1400, 480, 140, 20, 0x34495E);
+                this.createPlatform(1650, 380, 120, 20, 0x34495E);
+                this.createPlatform(1800, 280, 180, 20, 0x34495E);
+                
+                // Create enemies
+                this.createEnemy(300, 640);
+                this.createEnemy(500, 440);
+                this.createEnemy(800, 240);
+                this.createEnemy(1100, 640);
+                this.createEnemy(1300, 440);
+                this.createEnemy(1700, 340);
+                
+                // Create collectibles
+                this.createCollectible(250, 550, 'orb');
+                this.createCollectible(500, 450, 'crystal');
+                this.createCollectible(700, 350, 'orb');
+                this.createCollectible(950, 250, 'key');
+                this.createCollectible(1250, 350, 'crystal');
+                this.createCollectible(1450, 450, 'orb');
+                this.createCollectible(1900, 250, 'artifact');
+            }
+            
+            createPlatform(x, y, width, height, color) {
+                const platform = this.add.rectangle(x + width/2, y + height/2, width, height, color);
+                this.physics.add.existing(platform, true);
+                this.platforms.add(platform);
+            }
+            
+            createEnemy(x, y) {
+                const enemy = new Enemy(this, x, y);
+                this.enemies.add(enemy);
+            }
+            
+            createCollectible(x, y, type) {
+                const collectible = new Collectible(this, x, y, type);
+                this.collectibles.add(collectible);
+            }
+            
+            update() {
+                if (this.player) {
+                    this.player.update();
+                }
+                
+                this.enemies.children.entries.forEach(enemy => {
+                    if (enemy.update) enemy.update();
+                });
+                
+                // Update UI
+                this.updateUI();
+            }
+            
+            updateUI() {
+                if (this.player) {
+                    const healthPercent = Math.max(0, this.player.health / this.player.maxHealth * 100);
+                    const energyPercent = Math.max(0, this.player.energy / this.player.maxEnergy * 100);
+                    
+                    document.getElementById('healthFill').style.width = healthPercent + '%';
+                    document.getElementById('energyFill').style.width = energyPercent + '%';
+                    document.getElementById('scoreText').textContent = `Score: ${this.player.score}`;
+                }
+            }
+            
+            playerHitEnemy(player, enemy) {
+                if (!player.invulnerable) {
+                    player.takeDamage(20);
+                    this.cameras.main.shake(100, 0.02);
+                }
+            }
+            
+            playerCollectItem(player, collectible) {
+                collectible.collect(player);
+                
+                // Check for victory
+                if (collectible.type === 'artifact') {
+                    setTimeout(() => {
+                        gameManager.showVictory(player.score);
+                    }, 500);
+                }
+            }
+        }
+        
+        // Player Class
+        class Player extends Phaser.GameObjects.Rectangle {
+            constructor(scene, x, y) {
+                super(scene, x, y, 28, 42, 0x00FFFF);
+                scene.add.existing(this);
+                scene.physics.add.existing(this);
+                
+                this.body.setCollideWorldBounds(true);
+                this.body.setDrag(300, 0);
+                
+                this.maxHealth = 100;
+                this.health = this.maxHealth;
+                this.maxEnergy = 100;
+                this.energy = this.maxEnergy;
+                this.score = 0;
+                
+                this.speed = 180;
+                this.jumpPower = 400;
+                this.jumpsUsed = 0;
+                this.maxJumps = 3;
+                this.grounded = false;
+                this.invulnerable = false;
+                this.invulnerabilityTime = 0;
+                
+                // Abilities
+                this.dashCooldown = 0;
+                this.timeSlowCooldown = 0;
+                this.timeSlowActive = false;
+                this.timeSlowDuration = 0;
+                this.groundSlamming = false;
+            }
+            
+            update() {
+                this.handleMovement();
+                this.handleAbilities();
+                this.updateCooldowns();
+                this.updateInvulnerability();
+                this.updateEnergy();
+                
+                // Check grounded state
+                this.grounded = this.body.touching.down || this.body.blocked.down;
+                if (this.grounded) {
+                    this.jumpsUsed = 0;
+                    if (this.groundSlamming) {
+                        this.handleGroundSlam();
+                    }
+                }
+            }
+            
+            handleMovement() {
+                const cursors = this.scene.cursors;
+                const wasd = this.scene.wasd;
+                
+                // Horizontal movement
+                if (cursors.left.isDown || wasd.A.isDown) {
+                    this.body.setVelocityX(-this.speed);
+                } else if (cursors.right.isDown || wasd.D.isDown) {
+                    this.body.setVelocityX(this.speed);
+                }
+                
+                // Jumping
+                if ((cursors.up.isDown || wasd.W.isDown) && this.canJump()) {
+                    this.jump();
+                }
+            }
+            
+            handleAbilities() {
+                const wasd = this.scene.wasd;
+                
+                // Dash
+                if (Phaser.Input.Keyboard.JustDown(wasd.X) && this.dashCooldown <= 0 && this.energy >= 25) {
+                    this.dash();
+                }
+                
+                // Time Slow
+                if (Phaser.Input.Keyboard.JustDown(wasd.C) && this.timeSlowCooldown <= 0 && this.energy >= 40) {
+                    this.activateTimeSlow();
+                }
+                
+                // Ground Slam
+                if (Phaser.Input.Keyboard.JustDown(wasd.Z) && !this.grounded && this.energy >= 30) {
+                    this.groundSlam();
+                }
+                
+                // Restart
+                if (Phaser.Input.Keyboard.JustDown(wasd.R)) {
+                    this.scene.scene.restart();
+                }
+            }
+            
+            canJump() {
+                return this.grounded || this.jumpsUsed < this.maxJumps;
+            }
+            
+            jump() {
+                const jumpPower = this.jumpPower - (this.jumpsUsed * 60);
+                this.body.setVelocityY(-jumpPower);
+                this.jumpsUsed++;
+                this.grounded = false;
+                
+                // Jump effect
+                this.createParticleEffect(0x00FFFF, 5);
+            }
+            
+            dash() {
+                const direction = this.body.velocity.x >= 0 ? 1 : -1;
+                this.body.setVelocityX(direction * 400);
+                this.body.setVelocityY(-50);
+                
+                this.energy -= 25;
+                this.dashCooldown = 120;
+                this.makeInvulnerable(200);
+                
+                this.createParticleEffect(0x00CCFF, 8);
+                this.scene.cameras.main.shake(50, 0.01);
+            }
+            
+            activateTimeSlow() {
+                this.timeSlowActive = true;
+                this.timeSlowDuration = 180;
+                this.energy -= 40;
+                this.timeSlowCooldown = 300;
+                
+                this.scene.physics.world.timeScale = 0.3;
+                this.createParticleEffect(0x0066FF, 12);
+            }
+            
+            groundSlam() {
+                this.groundSlamming = true;
+                this.body.setVelocityY(500);
+                this.body.setVelocityX(0);
+                this.energy -= 30;
+            }
+            
+            handleGroundSlam() {
+                this.groundSlamming = false;
+                this.scene.cameras.main.shake(200, 0.05);
+                this.createParticleEffect(0xFF4500, 15);
+                
+                // Damage nearby enemies
+                this.scene.enemies.children.entries.forEach(enemy => {
+                    const distance = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
+                    if (distance < 80) {
+                        enemy.takeDamage(50);
+                    }
+                });
+            }
+            
+            updateCooldowns() {
+                if (this.dashCooldown > 0) this.dashCooldown--;
+                if (this.timeSlowCooldown > 0) this.timeSlowCooldown--;
+                
+                if (this.timeSlowActive) {
+                    this.timeSlowDuration--;
+                    if (this.timeSlowDuration <= 0) {
+                        this.timeSlowActive = false;
+                        this.scene.physics.world.timeScale = 1;
+                    }
+                }
+            }
+            
+            updateInvulnerability() {
+                if (this.invulnerable) {
+                    this.invulnerabilityTime--;
+                    if (this.invulnerabilityTime <= 0) {
+                        this.invulnerable = false;
+                        this.setAlpha(1);
+                    }
+                }
+            }
+            
+            updateEnergy() {
+                if (this.energy < this.maxEnergy) {
+                    this.energy = Math.min(this.maxEnergy, this.energy + 0.5);
+                }
+            }
+            
+            takeDamage(amount) {
+                if (this.invulnerable) return;
+                
+                this.health = Math.max(0, this.health - amount);
+                this.makeInvulnerable(1000);
+                
+                if (this.health <= 0) {
+                    gameManager.showGameOver(this.score);
+                }
+            }
+            
+            makeInvulnerable(duration) {
+                this.invulnerable = true;
+                this.invulnerabilityTime = duration;
+                this.setAlpha(0.5);
+            }
+            
+            addScore(points) {
+                this.score += points;
+            }
+            
+            createParticleEffect(color, count) {
+                for (let i = 0; i < count; i++) {
+                    const particle = this.scene.add.circle(
+                        this.x + Phaser.Math.Between(-20, 20),
+                        this.y + Phaser.Math.Between(-20, 20),
+                        3, color, 0.8
+                    );
+                    
+                    this.scene.tweens.add({
+                        targets: particle,
+                        y: particle.y - 30,
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => particle.destroy()
+                    });
+                }
+            }
+        }
+        
+        // Enemy Class
+        class Enemy extends Phaser.GameObjects.Rectangle {
+            constructor(scene, x, y) {
+                super(scene, x, y, 24, 30, 0x8E44AD);
+                scene.add.existing(this);
+                scene.physics.add.existing(this);
+                
+                this.body.setCollideWorldBounds(true);
+                this.body.setBounce(0.2);
+                
+                this.health = 60;
+                this.maxHealth = 60;
+                this.speed = 60;
+                this.direction = 1;
+                this.startX = x;
+                this.patrolRange = 100;
+            }
+            
+            update() {
+                // Simple patrol AI
+                if (this.x < this.startX - this.patrolRange || this.x > this.startX + this.patrolRange) {
+                    this.direction *= -1;
+                }
+                
+                this.body.setVelocityX(this.speed * this.direction);
+                
+                // Turn around at walls
+                if (this.body.blocked.left || this.body.blocked.right) {
+                    this.direction *= -1;
+                }
+            }
+            
+            takeDamage(amount) {
+                this.health -= amount;
+                
+                // Damage flash
+                this.scene.tweens.add({
+                    targets: this,
+                    alpha: 0.5,
+                    duration: 100,
+                    yoyo: true
+                });
+                
+                if (this.health <= 0) {
+                    this.destroy();
+                }
+            }
+        }
+        
+        // Collectible Class
+        class Collectible extends Phaser.GameObjects.Circle {
+            constructor(scene, x, y, type) {
+                const config = {
+                    orb: { color: 0x9B59B6, radius: 8, points: 25 },
+                    crystal: { color: 0x3498DB, radius: 10, points: 50 },
+                    key: { color: 0xF1C40F, radius: 8, points: 75 },
+                    artifact: { color: 0xE74C3C, radius: 12, points: 100 }
+                };
+                
+                const typeConfig = config[type] || config.orb;
+                super(scene, x, y, typeConfig.radius, typeConfig.color, 0.8);
+                scene.add.existing(this);
+                scene.physics.add.existing(this, true);
+                
+                this.type = type;
+                this.points = typeConfig.points;
+                
+                // Floating animation
+                scene.tweens.add({
+                    targets: this,
+                    y: y - 10,
+                    duration: 2000,
+                    ease: 'Sine.inOut',
+                    yoyo: true,
+                    repeat: -1
+                });
+            }
+            
+            collect(player) {
+                player.addScore(this.points);
+                
+                // Collection effect
+                for (let i = 0; i < 6; i++) {
+                    const particle = this.scene.add.circle(
+                        this.x + Phaser.Math.Between(-10, 10),
+                        this.y + Phaser.Math.Between(-10, 10),
+                        3, this.fillColor, 0.9
+                    );
+                    
+                    this.scene.tweens.add({
+                        targets: particle,
+                        y: particle.y - 40,
+                        alpha: 0,
+                        duration: 600,
+                        onComplete: () => particle.destroy()
+                    });
+                }
+                
+                this.destroy();
+            }
+        }
+        
+        // Initialize game
+        let gameManager;
+        let game;
+        
+        function startGame() {
+            gameManager.hideAllScreens();
+            gameManager.gameState = 'playing';
+            
+            // Start or restart Phaser game
+            if (game) {
+                game.destroy(true);
+            }
+            
+            const config = {
+                type: Phaser.AUTO,
+                width: 1000,
+                height: 700,
+                canvas: document.getElementById('gameCanvas'),
+                backgroundColor: '#0d001a',
+                physics: {
+                    default: 'arcade',
+                    arcade: {
+                        gravity: { y: 600 },
+                        debug: false
+                    }
+                },
+                scene: GameScene
+            };
+            
+            game = new Phaser.Game(config);
+            console.log('🚀 Game started! Use WASD to move, X to dash, C for time slow, Z for ground slam!');
+        }
+        
+        // Initialize everything when page loads
+        window.addEventListener('load', function() {
+            gameManager = new GameManager();
+            console.log('🌌 EchoRealms: Shadow Odyssey loaded successfully!');
+            console.log('🎮 All systems ready! Click Start Adventure when it appears!');
+        });
+        
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && gameManager.gameState === 'menu') {
+                startGame();
+            }
+            if (event.key === 'r' || event.key === 'R') {
+                if (gameManager.gameState === 'gameOver') {
+                    startGame();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

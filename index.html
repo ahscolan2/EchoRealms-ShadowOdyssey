@@ -126,6 +126,7 @@
                 <div>Level: <span id="level">1</span></div>
                 <div>Orbs: <span id="orbs">0</span>/5</div>
                 <div>Score: <span id="score">0</span></div>
+                <div id="comboDisplay" style="color: #ffaa00; font-weight: bold; display: none;">Combo: <span id="combo">0</span>x</div>
             </div>
         </div>
         <div class="controls">
@@ -141,7 +142,7 @@
         <!-- Screens -->
         <div id="startScreen" class="screen">
             <h1>EchoRealms: Shadow Odyssey</h1>
-            <h2>Full Edition</h2>
+            <h2>Full Edition - 12 Levels</h2>
             <div style="text-align: center; margin: 20px;">
                 <p><strong>Advanced Movement System:</strong></p>
                 <p>Triple Jump • Echo Phase-Dash • Time Slow • Ground Slam</p>
@@ -150,7 +151,9 @@
                 <p><strong>Epic Boss Battle:</strong></p>
                 <p>Multi-phase Shadow King with unique attack patterns</p>
             </div>
-            <button onclick="startGame()">Begin Odyssey</button>
+            <button onclick="startGame()">Begin Odyssey (Story Mode)</button>
+            <button onclick="startEndlessMode()" style="background: linear-gradient(45deg, #884400, #aa6622);">Endless Mode</button>
+            <p style="margin-top: 10px; color: #888; font-size: 0.9em;">High Score: <span id="startHighScore">0</span></p>
         </div>
         
         <div id="gameOverScreen" class="screen hidden">
@@ -173,6 +176,31 @@
             <p id="levelCompleteText">Moving to next biome...</p>
             <button onclick="nextLevel()">Continue</button>
         </div>
+        
+        <div id="settingsScreen" class="screen hidden">
+            <h1>Settings</h1>
+            <div style="text-align: left; max-width: 400px; margin: 20px auto;">
+                <div style="margin: 20px 0;">
+                    <label style="display: block; margin-bottom: 8px;">SFX Volume: <span id="sfxVolumeValue">70%</span></label>
+                    <input type="range" id="sfxVolumeSlider" min="0" max="100" value="70" style="width: 100%;">
+                </div>
+                <div style="margin: 20px 0;">
+                    <label style="display: block; margin-bottom: 8px;">
+                        <input type="checkbox" id="showTutorial" checked> Show Tutorial Hints
+                    </label>
+                </div>
+                <div style="margin: 20px 0;">
+                    <button onclick="resetProgress()" style="background: linear-gradient(45deg, #aa4444, #cc6666);">Reset Progress</button>
+                </div>
+            </div>
+            <button onclick="closeSettings()">Back to Game</button>
+        </div>
+        
+        <div id="tutorialOverlay" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); padding: 15px 25px; border-radius: 10px; border: 2px solid #00ffff; z-index: 1500; display: none; max-width: 500px;">
+            <p id="tutorialText" style="margin: 0; color: #ffffff; font-size: 14px; text-align: center;"></p>
+        </div>
+        
+        <button id="settingsButton" onclick="openSettings()" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 8px 16px; font-size: 0.9em; z-index: 500;">⚙️ Settings</button>
     </div>
 
     <script>
@@ -191,6 +219,19 @@
                 this.highScore = parseInt(localStorage.getItem('echoRealmsHighScore') || '0');
                 this.achievements = JSON.parse(localStorage.getItem('echoRealmsAchievements') || '[]');
                 this.settings = JSON.parse(localStorage.getItem('echoRealmsSettings') || '{"sfxVolume":0.7,"musicVolume":0.5,"showTutorial":true}');
+                
+                // Combo system
+                this.combo = 0;
+                this.comboTimer = 0;
+                this.comboMultiplier = 1;
+                
+                // Endless mode
+                this.endlessMode = false;
+                this.endlessLevel = 0;
+                this.endlessDifficulty = 1;
+                
+                // Show high score on start screen
+                document.getElementById('startHighScore').textContent = this.highScore;
                 
                 // Input
                 this.keys = {};
@@ -216,6 +257,15 @@
                 // Audio system
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 this.soundEnabled = this.settings.sfxVolume > 0;
+                
+                // Tutorial system
+                this.tutorialShown = {
+                    welcome: false,
+                    jump: false,
+                    dash: false,
+                    enemy: false,
+                    collectible: false
+                };
                 
                 // Load first level
                 this.loadLevel(1);
@@ -275,6 +325,104 @@
                 }
                 
                 this.updateUI();
+            }
+            
+            // ENDLESS MODE - Procedurally generated levels
+            loadEndlessLevel() {
+                this.endlessLevel++;
+                this.currentLevel = this.endlessLevel;
+                this.endlessDifficulty = 1 + (this.endlessLevel * 0.15);
+                
+                // Clear arrays
+                this.platforms = [];
+                this.movingPlatforms = [];
+                this.hazards = [];
+                this.enemies = [];
+                this.collectibles = [];
+                this.particles = [];
+                this.floatingTexts = [];
+                
+                // Reset player
+                this.player.x = 50;
+                this.player.y = 450;
+                this.player.vx = 0;
+                this.player.vy = 0;
+                this.player.health = this.player.maxHealth;
+                this.player.energy = this.player.maxEnergy;
+                
+                // Ground platform
+                this.platforms.push(new Platform(0, 550, 1000, 50, '#334455'));
+                
+                // Generate random platforms
+                const platformCount = 5 + Math.floor(this.endlessLevel / 2);
+                for (let i = 0; i < platformCount; i++) {
+                    const x = 100 + Math.random() * 700;
+                    const y = 500 - (i * 70) - Math.random() * 30;
+                    const width = 70 + Math.random() * 60;
+                    this.platforms.push(new Platform(x, y, width, 20, '#445566'));
+                }
+                
+                // Add some moving platforms
+                if (this.endlessLevel > 2) {
+                    const movingCount = 1 + Math.floor(this.endlessLevel / 4);
+                    for (let i = 0; i < movingCount; i++) {
+                        const x = 200 + Math.random() * 600;
+                        const y = 200 + Math.random() * 200;
+                        const horizontal = Math.random() > 0.5;
+                        this.movingPlatforms.push(new MovingPlatform(
+                            x, y, 80, 15, '#445566',
+                            x, x + 150, y, y + 100, 2, horizontal
+                        ));
+                    }
+                }
+                
+                // Add hazards
+                if (this.endlessLevel > 1) {
+                    const hazardCount = Math.floor(this.endlessLevel / 2);
+                    for (let i = 0; i < hazardCount; i++) {
+                        const x = 100 + Math.random() * 700;
+                        const width = 30 + Math.random() * 40;
+                        this.hazards.push(new Hazard(x, 530, width, 20, 'spike'));
+                    }
+                }
+                
+                // Generate enemies with scaling difficulty
+                const enemyCount = 2 + Math.floor(this.endlessLevel * 0.8);
+                for (let i = 0; i < enemyCount; i++) {
+                    const x = 150 + Math.random() * 700;
+                    const y = 500 - Math.random() * 300;
+                    const rand = Math.random();
+                    
+                    if (rand < 0.3) {
+                        this.enemies.push(new FastEnemy(x, y, 'shadow'));
+                    } else if (rand < 0.6 && this.endlessLevel > 3) {
+                        this.enemies.push(new TankEnemy(x, y, 'shadow'));
+                    } else {
+                        this.enemies.push(new Enemy(x, y, 'shadow'));
+                    }
+                }
+                
+                // Add mini-boss every 5 levels
+                if (this.endlessLevel % 5 === 0) {
+                    this.enemies.push(new MiniBoss(500, 300));
+                }
+                
+                // Generate collectibles
+                const orbCount = 3 + Math.floor(this.endlessLevel / 3);
+                for (let i = 0; i < orbCount; i++) {
+                    const x = 100 + Math.random() * 800;
+                    const y = 200 + Math.random() * 300;
+                    this.collectibles.push(new Orb(x, y));
+                }
+                
+                // Always add a key to complete the level
+                this.collectibles.push(new Key(800 + Math.random() * 100, 150 + Math.random() * 100));
+                
+                this.createParallaxLayers();
+                this.updateUI();
+                
+                // Show endless mode info
+                this.showTutorial(`Endless Level ${this.endlessLevel} - Difficulty: ${this.endlessDifficulty.toFixed(1)}x`, 2000);
             }
             
             // SHADOW REALM LEVELS (1-3)
@@ -670,9 +818,21 @@
                             this.enemies.splice(i, 1);
                             this.addParticleExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ff6666');
                             this.addScreenShake(5);
-                            this.score += 100;
-                            this.addFloatingText('+100', enemy.x + enemy.width/2, enemy.y, '#ffdd00', 20);
+                            
+                            // Combo system
+                            this.combo++;
+                            this.comboTimer = 3000; // 3 seconds to continue combo
+                            this.comboMultiplier = Math.min(1 + (this.combo * 0.2), 3); // Max 3x multiplier
+                            
+                            const points = Math.floor(100 * this.comboMultiplier);
+                            this.score += points;
+                            
+                            const comboText = this.combo > 1 ? ` x${this.combo}!` : '';
+                            this.addFloatingText(`+${points}${comboText}`, enemy.x + enemy.width/2, enemy.y, '#ffdd00', 20);
                             this.playSound('enemy_defeat');
+                            
+                            // Combo achievement
+                            if (this.combo >= 5) this.checkAchievement('combo_master', 'Combo Master! 5 in a row!');
                             
                             // Achievement check
                             if (enemy instanceof ShadowKing) {
@@ -719,6 +879,15 @@
                 
                 // Update parallax layers
                 this.updateParallaxLayers();
+                
+                // Update combo system
+                if (this.comboTimer > 0) {
+                    this.comboTimer -= deltaTime;
+                    if (this.comboTimer <= 0) {
+                        this.combo = 0;
+                        this.comboMultiplier = 1;
+                    }
+                }
                 
                 // Update screen shake
                 if (this.screenShake.intensity > 0) {
@@ -1088,6 +1257,15 @@
                 document.getElementById('level').textContent = this.currentLevel;
                 document.getElementById('orbs').textContent = this.collectibles.filter(c => c instanceof Orb).length;
                 document.getElementById('score').textContent = this.score;
+                
+                // Combo display
+                const comboDisplay = document.getElementById('comboDisplay');
+                if (this.combo > 1) {
+                    comboDisplay.style.display = 'block';
+                    document.getElementById('combo').textContent = this.combo;
+                } else {
+                    comboDisplay.style.display = 'none';
+                }
             }
             
             render() {
@@ -1237,6 +1415,37 @@
                 oscillator.stop(this.audioContext.currentTime + 0.5);
             }
             
+            showTutorial(message, duration = 4000) {
+                if (!this.settings.showTutorial) return;
+                
+                const overlay = document.getElementById('tutorialOverlay');
+                const text = document.getElementById('tutorialText');
+                
+                text.textContent = message;
+                overlay.style.display = 'block';
+                
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, duration);
+            }
+            
+            checkTutorials() {
+                if (this.currentLevel === 1 && !this.tutorialShown.welcome) {
+                    this.tutorialShown.welcome = true;
+                    setTimeout(() => this.showTutorial('Welcome to EchoRealms! Use WASD or Arrow keys to move. Collect all items to complete the level!'), 500);
+                }
+                
+                if (this.player.jumpsRemaining < 3 && !this.tutorialShown.jump) {
+                    this.tutorialShown.jump = true;
+                    this.showTutorial('Great! You can jump up to 3 times in the air. Try it!');
+                }
+                
+                if (this.enemies.length > 0 && !this.tutorialShown.enemy && this.currentLevel === 1) {
+                    this.tutorialShown.enemy = true;
+                    setTimeout(() => this.showTutorial('Watch out for enemies! Press S while in the air to Ground Slam them, or press X to dash through them!'), 3000);
+                }
+            }
+            
             gameLoop() {
                 const currentTime = performance.now();
                 const deltaTime = currentTime - this.lastTime;
@@ -1244,6 +1453,7 @@
                 
                 this.update(deltaTime);
                 this.render();
+                this.checkTutorials();
                 
                 requestAnimationFrame(() => this.gameLoop());
             }
@@ -1844,22 +2054,95 @@
         function startGame() {
             document.getElementById('startScreen').classList.add('hidden');
             game = new Game();
+            game.endlessMode = false;
+            game.gameState = 'playing';
+        }
+        
+        function startEndlessMode() {
+            document.getElementById('startScreen').classList.add('hidden');
+            game = new Game();
+            game.endlessMode = true;
+            game.loadEndlessLevel();
             game.gameState = 'playing';
         }
         
         function restartGame() {
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('victoryScreen').classList.add('hidden');
-            game.loadLevel(1);
+            if (game.endlessMode) {
+                game.endlessLevel = 0;
+                game.endlessDifficulty = 1;
+                game.loadEndlessLevel();
+            } else {
+                game.loadLevel(1);
+            }
             game.score = 0;
+            game.combo = 0;
             game.gameState = 'playing';
         }
         
         function nextLevel() {
             document.getElementById('levelCompleteScreen').classList.add('hidden');
-            game.loadLevel(game.currentLevel + 1);
+            if (game.endlessMode) {
+                game.loadEndlessLevel();
+            } else {
+                game.loadLevel(game.currentLevel + 1);
+            }
             game.gameState = 'playing';
         }
+        
+        function openSettings() {
+            game.gameState = 'paused';
+            document.getElementById('settingsScreen').classList.remove('hidden');
+            document.getElementById('settingsButton').style.display = 'none';
+            
+            // Load current settings
+            document.getElementById('sfxVolumeSlider').value = game.settings.sfxVolume * 100;
+            document.getElementById('sfxVolumeValue').textContent = Math.round(game.settings.sfxVolume * 100) + '%';
+            document.getElementById('showTutorial').checked = game.settings.showTutorial;
+        }
+        
+        function closeSettings() {
+            document.getElementById('settingsScreen').classList.add('hidden');
+            document.getElementById('settingsButton').style.display = 'block';
+            if (game.currentLevel > 0) {
+                game.gameState = 'playing';
+            }
+        }
+        
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                localStorage.removeItem('echoRealmsProgress');
+                localStorage.removeItem('echoRealmsHighScore');
+                localStorage.removeItem('echoRealmsAchievements');
+                alert('Progress reset! Reloading game...');
+                location.reload();
+            }
+        }
+        
+        // Settings event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const sfxSlider = document.getElementById('sfxVolumeSlider');
+            const sfxValue = document.getElementById('sfxVolumeValue');
+            const tutorialCheck = document.getElementById('showTutorial');
+            
+            sfxSlider.addEventListener('input', function() {
+                const volume = this.value / 100;
+                sfxValue.textContent = this.value + '%';
+                if (game) {
+                    game.settings.sfxVolume = volume;
+                    game.soundEnabled = volume > 0;
+                    localStorage.setItem('echoRealmsSettings', JSON.stringify(game.settings));
+                }
+            });
+            
+            tutorialCheck.addEventListener('change', function() {
+                if (game) {
+                    game.settings.showTutorial = this.checked;
+                    localStorage.setItem('echoRealmsSettings', JSON.stringify(game.settings));
+                }
+            });
+        });
     </script>
 </body>
 </html>

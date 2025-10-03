@@ -3,480 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EchoRealms: Shadow Odyssey - Enhanced Edition</title>
-    <style>
-        :root {
-            --primary-color: #00ffff;
-            --secondary-color: #9B59B6;
-            --accent-color: #F1C40F;
-            --dark-bg: #0d001a;
-            --darker-bg: #1a0033;
-            --text-primary: #ffffff;
-            --text-secondary: #cccccc;
-            --shadow-glow: rgba(0, 255, 255, 0.3);
-        }
-        
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-        }
-        
-        body {
-            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
-            background: linear-gradient(135deg, var(--dark-bg), var(--darker-bg));
-            color: var(--text-primary);
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            min-height: 700px;
-        }
-        
-        #gameContainer {
-            position: relative;
-            background: linear-gradient(to bottom, #001122, #003366);
-            border: 3px solid var(--primary-color);
-            border-radius: 15px;
-            box-shadow: 
-                0 0 50px var(--shadow-glow),
-                inset 0 0 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-        }
-        
-        #phaser-game {
-            display: block;
-            border-radius: 12px;
-        }
-        
-        .screen {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(13, 0, 26, 0.95), rgba(26, 0, 51, 0.95));
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 40px;
-        }
-        
-        .screen.hidden { 
-            display: none; 
-        }
-        
-        .screen h1 {
-            font-size: 3em;
-            font-weight: 900;
-            color: var(--primary-color);
-            text-shadow: 
-                0 0 20px var(--shadow-glow),
-                0 0 40px var(--shadow-glow),
-                0 2px 4px rgba(0, 0, 0, 0.8);
-            margin-bottom: 20px;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-        
-        .screen h2 {
-            font-size: 1.8em;
-            font-weight: 700;
-            color: var(--accent-color);
-            margin-bottom: 20px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-        }
-        
-        .screen p {
-            margin: 8px 0;
-            color: var(--text-secondary);
-            font-size: 1.1em;
-            line-height: 1.5;
-            text-align: center;
-        }
-        
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
-            max-width: 800px;
-        }
-        
-        .feature-card {
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid var(--secondary-color);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(155, 89, 182, 0.3);
-            border-color: var(--primary-color);
-        }
-        
-        .feature-card h3 {
-            color: var(--primary-color);
-            font-size: 1.3em;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        
-        .feature-list {
-            color: var(--text-secondary);
-            font-size: 0.95em;
-            line-height: 1.4;
-        }
-        
-        button {
-            padding: 15px 35px;
-            font-size: 1.2em;
-            font-weight: 600;
-            background: linear-gradient(45deg, #006666, #00aaaa);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 15px 10px;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        button:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        button:hover:before {
-            left: 100%;
-        }
-        
-        button:hover {
-            background: linear-gradient(45deg, #008888, #00cccc);
-            transform: translateY(-3px);
-            box-shadow: 
-                0 8px 20px rgba(0, 170, 170, 0.4),
-                0 0 30px rgba(0, 255, 255, 0.2);
-        }
-        
-        button:active {
-            transform: translateY(-1px);
-        }
-        
-        .controls-hint {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px 25px;
-            border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 0.9em;
-            text-align: center;
-            backdrop-filter: blur(5px);
-            z-index: 2000;
-        }
-        
-        .controls-hint strong {
-            color: var(--primary-color);
-            display: block;
-            margin-bottom: 8px;
-        }
-        
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 5px;
-            font-size: 0.85em;
-            line-height: 1.3;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(0, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--primary-color);
-            animation: spin 1s ease-in-out infinite;
-            margin: 20px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .score-display {
-            font-size: 1.4em;
-            color: var(--accent-color);
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-            margin: 15px 0;
-        }
-        
-        .biome-indicator {
-            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 1.1em;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        
-        /* Responsive design */
-        @media (max-width: 1100px) {
-            #gameContainer {
-                transform: scale(0.9);
-            }
-        }
-        
-        @media (max-width: 900px) {
-            .screen h1 {
-                font-size: 2.5em;
-            }
-            
-            .feature-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            #gameContainer {
-                transform: scale(0.8);
-            }
-        }
-        
-        @media (max-width: 700px) {
-            body {
-                padding: 10px;
-            }
-            
-            #gameContainer {
-                transform: scale(0.7);
-            }
-        }
-    </style>
+    <title>EchoRealms: Shadow Odyssey</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div id="gameContainer">
-        <!-- Game renders here -->
+        <!-- Game Canvas -->
         <div id="phaser-game"></div>
         
-        <!-- Start Screen -->
-        <div id="startScreen" class="screen">
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="screen">
             <h1>🌌 EchoRealms: Shadow Odyssey</h1>
-            <h2>✨ Enhanced Edition ✨</h2>
+            <div class="loading-spinner"></div>
+            <p>Loading magical realms...</p>
+        </div>
+        
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen hidden">
+            <h1>🌌 EchoRealms: Shadow Odyssey</h1>
+            <h2>✨ Master the Shadow Abilities ✨</h2>
             
             <div class="feature-grid">
                 <div class="feature-card">
-                    <h3>🚀 Advanced Movement</h3>
+                    <h3>🚀 Epic Movement</h3>
                     <div class="feature-list">
-                        Triple Jump • Echo Phase-Dash<br>
+                        Triple Jump • Echo Dash<br>
                         Time Slow • Ground Slam<br>
-                        Wall-Running • Combo System
+                        Wall Slide • Combo System
                     </div>
                 </div>
                 
                 <div class="feature-card">
-                    <h3>🌍 Epic Biomes</h3>
+                    <h3>🌍 Four Biomes</h3>
                     <div class="feature-list">
                         Shadow Realm • Forest Kingdom<br>
                         Crystal Caves • Boss Arena<br>
-                        15+ Unique Levels
+                        Progressive Difficulty
                     </div>
                 </div>
                 
                 <div class="feature-card">
-                    <h3>🎮 Enhanced Combat</h3>
+                    <h3>🎮 Smart Combat</h3>
                     <div class="feature-list">
-                        Smart AI Enemies • Multi-Phase Bosses<br>
-                        Strategic Abilities • Combo Attacks<br>
-                        Dynamic Difficulty
+                        Adaptive AI • Dynamic Enemies<br>
+                        Strategic Abilities • Boss Battles<br>
+                        Skill-Based Challenge
                     </div>
                 </div>
                 
                 <div class="feature-card">
                     <h3>🎆 Visual Effects</h3>
                     <div class="feature-list">
-                        Particle Systems • Screen Shake<br>
-                        Dynamic Lighting • Smooth Animations<br>
+                        Particle Systems • Screen Effects<br>
+                        Smooth Animations • Audio Feedback<br>
                         Professional Polish
                     </div>
                 </div>
             </div>
             
-            <button onclick="startGame()">🎆 Begin Enhanced Odyssey</button>
+            <button id="startBtn" onclick="startGame()">🎮 Begin Adventure</button>
+            <button id="instructionsBtn" onclick="showInstructions()">📚 How to Play</button>
+        </div>
+        
+        <!-- Instructions Screen -->
+        <div id="instructionsScreen" class="screen hidden">
+            <h1>🎮 How to Play</h1>
+            
+            <div class="controls-section">
+                <h2>🕹️ Controls</h2>
+                <div class="controls-grid">
+                    <div class="control-item">
+                        <strong>WASD / Arrow Keys</strong><br>
+                        Move and Jump
+                    </div>
+                    <div class="control-item">
+                        <strong>X Key</strong><br>
+                        Echo Dash (invulnerable)
+                    </div>
+                    <div class="control-item">
+                        <strong>C Key</strong><br>
+                        Time Slow (bullet-time)
+                    </div>
+                    <div class="control-item">
+                        <strong>Z Key</strong><br>
+                        Ground Slam (area damage)
+                    </div>
+                </div>
+            </div>
+            
+            <div class="objective-section">
+                <h2>🎯 Objective</h2>
+                <p>Collect artifacts and orbs while mastering your shadow abilities across four unique biomes!</p>
+                <ul>
+                    <li>🔮 Collect artifacts to progress to next biome</li>
+                    <li>💎 Gather orbs and crystals for points</li>
+                    <li>⚔️ Defeat enemies with strategic ability use</li>
+                    <li>🏆 Master all biomes to achieve ultimate victory</li>
+                </ul>
+            </div>
+            
+            <button onclick="backToMenu()">⬅️ Back to Menu</button>
         </div>
         
         <!-- Game Over Screen -->
         <div id="gameOverScreen" class="screen hidden">
-            <h1>💀 The Shadows Consumed You</h1>
-            <p class="biome-indicator">Your journey through the EchoRealms has ended...</p>
+            <h1>💀 Shadows Consumed You</h1>
+            <p class="biome-indicator">Your journey ends here... for now.</p>
             <div class="score-display" id="finalScore">Final Score: 0</div>
-            <p>The darkness was too strong this time, but every defeat makes you stronger.</p>
-            <p>Master your abilities and try again!</p>
-            <button onclick="restartGame()">⚔️ Respawn & Try Again</button>
-            <button onclick="returnToMenu()">🏠 Return to Menu</button>
+            <p>Every defeat teaches you more about the shadows.</p>
+            <p>Rise again, stronger than before!</p>
+            <button onclick="restartGame()">⚔️ Try Again</button>
+            <button onclick="returnToMenu()">🏠 Main Menu</button>
         </div>
         
         <!-- Victory Screen -->
         <div id="victoryScreen" class="screen hidden">
-            <h1>🎉 Ultimate Victory!</h1>
-            <h2>✨ Master of All Realms ✨</h2>
+            <h1>🎉 Master of Shadows!</h1>
+            <h2>✨ All Realms Conquered ✨</h2>
             <div class="score-display" id="victoryScore">Final Score: 0</div>
-            <p>You have conquered all four biomes and mastered the EchoRealms!</p>
-            <p>Your legend will echo through the shadows forever.</p>
+            <p>You have mastered all shadow abilities and conquered every realm!</p>
+            <p>Your legend echoes through the EchoRealms forever.</p>
             
-            <div class="feature-card" style="margin: 20px 0;">
-                <h3>🏆 Achievement Unlocked</h3>
-                <div class="feature-list">
-                    🌌 Shadow Realm Master<br>
-                    🌲 Forest Guardian Defeated<br>
-                    🔮 Crystal Cave Explorer<br>
-                    ⚔️ Boss Arena Champion
+            <div class="achievement-card">
+                <h3>🏆 Achievements Unlocked</h3>
+                <div class="achievement-list">
+                    ✅ Shadow Realm Explorer<br>
+                    ✅ Forest Guardian Defeated<br>
+                    ✅ Crystal Cave Master<br>
+                    ✅ Boss Arena Champion
                 </div>
             </div>
             
             <button onclick="restartGame()">🚀 Play Again</button>
+            <button onclick="returnToMenu()">🏠 Main Menu</button>
         </div>
         
-        <!-- Level Transition Screen -->
-        <div id="levelTransitionScreen" class="screen hidden">
+        <!-- Pause Screen -->
+        <div id="pauseScreen" class="screen hidden">
+            <h1>⏸️ Game Paused</h1>
+            <p>Take a breath, shadow master.</p>
+            <button onclick="resumeGame()">▶️ Resume</button>
+            <button onclick="restartGame()">🔄 Restart Level</button>
+            <button onclick="returnToMenu()">🏠 Main Menu</button>
+        </div>
+        
+        <!-- Level Transition -->
+        <div id="transitionScreen" class="screen hidden">
             <h1>🌟 Biome Complete!</h1>
             <p class="biome-indicator" id="nextBiomeName">Entering Next Realm...</p>
             <div class="loading-spinner"></div>
-            <p>Prepare for greater challenges ahead!</p>
-            <p>Your abilities grow stronger with each realm conquered.</p>
+            <p>Prepare for new challenges ahead!</p>
         </div>
         
-        <!-- Controls Help -->
-        <div class="controls-hint">
-            <strong>🎮 Advanced Controls</strong>
-            <div class="controls-grid">
-                <div>WASD/Arrows: Move</div>
-                <div>X: Echo Dash</div>
-                <div>W: Triple Jump</div>
-                <div>C: Time Slow</div>
-                <div>Z: Ground Slam</div>
-                <div>R: Restart (if stuck)</div>
-            </div>
+        <!-- Error Screen -->
+        <div id="errorScreen" class="screen hidden">
+            <h1>⚠️ Oops! Something went wrong</h1>
+            <p id="errorMessage">The shadows are interfering with the game...</p>
+            <p>Don't worry, we can fix this!</p>
+            <button onclick="location.reload()">🔄 Reload Game</button>
+            <button onclick="returnToMenu()">🏠 Main Menu</button>
         </div>
     </div>
 
-    <!-- Load Phaser.js -->
+    <!-- Game Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils/ParticleSystem.js"></script>
+    <script src="js/utils/AudioSystem.js"></script>
+    <script src="js/entities/Player.js"></script>
+    <script src="js/entities/Enemy.js"></script>
+    <script src="js/entities/Collectible.js"></script>
+    <script src="js/managers/BiomeManager.js"></script>
+    <script src="js/managers/UIManager.js"></script>
+    <script src="js/scenes/MainScene.js"></script>
+    <script src="js/main.js"></script>
     
-    <!-- Load our enhanced game -->
-    <script src="game.js"></script>
-    
-    <script>
-        // Global game management functions
-        let currentGame = null;
-        
-        function startGame() {
-            document.getElementById('startScreen').classList.add('hidden');
-            
-            // Initialize the enhanced Phaser.js game
-            if (currentGame) {
-                currentGame.destroy(true);
-            }
-            
-            // The game is automatically started by the game.js file
-            console.log('🎆 EchoRealms: Shadow Odyssey Enhanced Edition Started!');
-            console.log('🎮 Features: 4 Biomes, Advanced Movement, Dynamic AI, Particle Effects');
-        }
-        
-        function restartGame() {
-            // Hide all overlay screens
-            document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('victoryScreen').classList.add('hidden');
-            document.getElementById('levelTransitionScreen').classList.add('hidden');
-            
-            // Restart the Phaser game
-            if (window.enhancedGame && window.enhancedGame.scene) {
-                window.enhancedGame.scene.scenes.forEach(scene => {
-                    if (scene.scene.key === 'AdvancedMainScene') {
-                        scene.scene.restart();
-                    }
-                });
-            }
-        }
-        
-        function returnToMenu() {
-            document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('startScreen').classList.remove('hidden');
-        }
-        
-        function showGameOver(score = 0) {
-            document.getElementById('finalScore').textContent = `Final Score: ${score}`;
-            document.getElementById('gameOverScreen').classList.remove('hidden');
-        }
-        
-        function showVictory(score = 0) {
-            document.getElementById('victoryScore').textContent = `Final Score: ${score}`;
-            document.getElementById('victoryScreen').classList.remove('hidden');
-        }
-        
-        function showBiomeTransition(biomeName) {
-            document.getElementById('nextBiomeName').textContent = `Entering: ${biomeName}`;
-            document.getElementById('levelTransitionScreen').classList.remove('hidden');
-            
-            // Auto-hide after 3 seconds
-            setTimeout(() => {
-                document.getElementById('levelTransitionScreen').classList.add('hidden');
-            }, 3000);
-        }
-        
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎆 EchoRealms: Shadow Odyssey Enhanced Edition Loaded');
-            console.log('🚀 Ready to begin your journey through the realms!');
-            
-            // Add keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                // ESC to return to menu (if not playing)
-                if (e.key === 'Escape' && !document.getElementById('startScreen').classList.contains('hidden')) {
-                    // Already on start screen
-                } else if (e.key === 'Escape') {
-                    returnToMenu();
-                }
-                
-                // Enter to start game from menu
-                if (e.key === 'Enter' && !document.getElementById('startScreen').classList.contains('hidden')) {
-                    startGame();
-                }
-            });
-        });
-        
-        // Global error handling
-        window.addEventListener('error', (e) => {
-            console.error('😨 Game Error:', e.error);
-            // Could show an error screen here if needed
-        });
-        
-        // Performance monitoring
-        if (typeof performance !== 'undefined' && performance.mark) {
-            performance.mark('game-load-start');
-            window.addEventListener('load', () => {
-                performance.mark('game-load-end');
-                performance.measure('game-load-time', 'game-load-start', 'game-load-end');
-                const measure = performance.getEntriesByName('game-load-time')[0];
-                console.log(`⏱️ Game loaded in ${Math.round(measure.duration)}ms`);
-            });
-        }
-    </script>
+    <!-- Game Management -->
+    <script src="js/gameManager.js"></script>
 </body>
 </html>

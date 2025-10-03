@@ -3,1044 +3,479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EchoRealms: Shadow Odyssey - Full Edition</title>
+    <title>EchoRealms: Shadow Odyssey - Enhanced Edition</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #00ffff;
+            --secondary-color: #9B59B6;
+            --accent-color: #F1C40F;
+            --dark-bg: #0d001a;
+            --darker-bg: #1a0033;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --shadow-glow: rgba(0, 255, 255, 0.3);
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #0c0c0c, #1a1a2e);
-            color: #ffffff;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg), var(--darker-bg));
+            color: var(--text-primary);
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            min-height: 700px;
         }
+        
         #gameContainer {
             position: relative;
             background: linear-gradient(to bottom, #001122, #003366);
-            border: 3px solid #00ffff;
-            border-radius: 10px;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.3);
-        }
-        #gameCanvas {
-            display: block;
-            background: linear-gradient(to bottom, #001a33, #002266);
-        }
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 100;
-            font-size: 14px;
-        }
-        .bar {
-            width: 150px;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #666;
-            border-radius: 10px;
+            border: 3px solid var(--primary-color);
+            border-radius: 15px;
+            box-shadow: 
+                0 0 50px var(--shadow-glow),
+                inset 0 0 30px rgba(0, 0, 0, 0.5);
             overflow: hidden;
-            position: relative;
         }
-        .bar-fill {
-            height: 100%;
-            transition: width 0.3s ease;
-            border-radius: 10px;
+        
+        #phaser-game {
+            display: block;
+            border-radius: 12px;
         }
-        #healthBar .bar-fill { background: linear-gradient(90deg, #ff4444, #ff6666); }
-        #energyBar .bar-fill { background: linear-gradient(90deg, #4444ff, #6666ff); }
-        .stats {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #444;
-        }
-        .controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            border: 1px solid #444;
-        }
+        
         .screen {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: linear-gradient(135deg, rgba(13, 0, 26, 0.95), rgba(26, 0, 51, 0.95));
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: 40px;
         }
-        .screen.hidden { display: none; }
+        
+        .screen.hidden { 
+            display: none; 
+        }
+        
         .screen h1 {
-            font-size: 2.5em;
-            color: #00ffff;
-            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            font-size: 3em;
+            font-weight: 900;
+            color: var(--primary-color);
+            text-shadow: 
+                0 0 20px var(--shadow-glow),
+                0 0 40px var(--shadow-glow),
+                0 2px 4px rgba(0, 0, 0, 0.8);
             margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 2px;
         }
+        
         .screen h2 {
             font-size: 1.8em;
-            color: #ffff00;
-            margin-bottom: 15px;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
         }
+        
         .screen p {
-            margin: 5px 0;
-            color: #cccccc;
-        }
-        button {
-            padding: 12px 25px;
+            margin: 8px 0;
+            color: var(--text-secondary);
             font-size: 1.1em;
+            line-height: 1.5;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+            max-width: 800px;
+        }
+        
+        .feature-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--secondary-color);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(155, 89, 182, 0.3);
+            border-color: var(--primary-color);
+        }
+        
+        .feature-card h3 {
+            color: var(--primary-color);
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .feature-list {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+        
+        button {
+            padding: 15px 35px;
+            font-size: 1.2em;
+            font-weight: 600;
             background: linear-gradient(45deg, #006666, #00aaaa);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 10px;
+            margin: 15px 10px;
             transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
         }
+        
+        button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        button:hover:before {
+            left: 100%;
+        }
+        
         button:hover {
             background: linear-gradient(45deg, #008888, #00cccc);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 170, 170, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 20px rgba(0, 170, 170, 0.4),
+                0 0 30px rgba(0, 255, 255, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(-1px);
+        }
+        
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 25px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9em;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+        }
+        
+        .controls-hint strong {
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            font-size: 0.85em;
+            line-height: 1.3;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .score-display {
+            font-size: 1.4em;
+            color: var(--accent-color);
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            margin: 15px 0;
+        }
+        
+        .biome-indicator {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 1100px) {
+            #gameContainer {
+                transform: scale(0.9);
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .screen h1 {
+                font-size: 2.5em;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            #gameContainer {
+                transform: scale(0.8);
+            }
+        }
+        
+        @media (max-width: 700px) {
+            body {
+                padding: 10px;
+            }
+            
+            #gameContainer {
+                transform: scale(0.7);
+            }
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
-        <div id="ui">
-            <div id="healthBar" class="bar">
-                <div class="bar-fill" style="width: 100%"></div>
-            </div>
-            <div id="energyBar" class="bar">
-                <div class="bar-fill" style="width: 100%"></div>
-            </div>
-            <div class="stats">
-                <div>Level: <span id="level">1</span></div>
-                <div>Orbs: <span id="orbs">0</span>/5</div>
-                <div>Score: <span id="score">0</span></div>
-            </div>
-        </div>
-        <div class="controls">
-            <strong>Controls:</strong><br>
-            WASD/Arrows - Move<br>
-            W/Space - Jump (3x)<br>
-            X - Echo Dash<br>
-            C - Time Slow<br>
-            S+Down - Ground Slam
-        </div>
-        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        <!-- Game renders here -->
+        <div id="phaser-game"></div>
         
-        <!-- Screens -->
+        <!-- Start Screen -->
         <div id="startScreen" class="screen">
-            <h1>EchoRealms: Shadow Odyssey</h1>
-            <h2>Full Edition</h2>
-            <div style="text-align: center; margin: 20px;">
-                <p><strong>Advanced Movement System:</strong></p>
-                <p>Triple Jump • Echo Phase-Dash • Time Slow • Ground Slam</p>
-                <p><strong>Multiple Biomes:</strong></p>
-                <p>Shadow Realm • Forest Kingdom • Crystal Caves • Boss Arena</p>
-                <p><strong>Epic Boss Battle:</strong></p>
-                <p>Multi-phase Shadow King with unique attack patterns</p>
+            <h1>🌌 EchoRealms: Shadow Odyssey</h1>
+            <h2>✨ Enhanced Edition ✨</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🚀 Advanced Movement</h3>
+                    <div class="feature-list">
+                        Triple Jump • Echo Phase-Dash<br>
+                        Time Slow • Ground Slam<br>
+                        Wall-Running • Combo System
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🌍 Epic Biomes</h3>
+                    <div class="feature-list">
+                        Shadow Realm • Forest Kingdom<br>
+                        Crystal Caves • Boss Arena<br>
+                        15+ Unique Levels
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎮 Enhanced Combat</h3>
+                    <div class="feature-list">
+                        Smart AI Enemies • Multi-Phase Bosses<br>
+                        Strategic Abilities • Combo Attacks<br>
+                        Dynamic Difficulty
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>🎆 Visual Effects</h3>
+                    <div class="feature-list">
+                        Particle Systems • Screen Shake<br>
+                        Dynamic Lighting • Smooth Animations<br>
+                        Professional Polish
+                    </div>
+                </div>
             </div>
-            <button onclick="startGame()">Begin Odyssey</button>
+            
+            <button onclick="startGame()">🎆 Begin Enhanced Odyssey</button>
         </div>
         
+        <!-- Game Over Screen -->
         <div id="gameOverScreen" class="screen hidden">
-            <h1>Game Over</h1>
-            <p>The shadows have consumed you...</p>
-            <button onclick="restartGame()">Try Again</button>
+            <h1>💀 The Shadows Consumed You</h1>
+            <p class="biome-indicator">Your journey through the EchoRealms has ended...</p>
+            <div class="score-display" id="finalScore">Final Score: 0</div>
+            <p>The darkness was too strong this time, but every defeat makes you stronger.</p>
+            <p>Master your abilities and try again!</p>
+            <button onclick="restartGame()">⚔️ Respawn & Try Again</button>
+            <button onclick="returnToMenu()">🏠 Return to Menu</button>
         </div>
         
+        <!-- Victory Screen -->
         <div id="victoryScreen" class="screen hidden">
-            <h1>Victory!</h1>
-            <p>You have conquered the Shadow Odyssey!</p>
-            <p>All biomes cleared and Shadow King defeated!</p>
-            <button onclick="restartGame()">Play Again</button>
+            <h1>🎉 Ultimate Victory!</h1>
+            <h2>✨ Master of All Realms ✨</h2>
+            <div class="score-display" id="victoryScore">Final Score: 0</div>
+            <p>You have conquered all four biomes and mastered the EchoRealms!</p>
+            <p>Your legend will echo through the shadows forever.</p>
+            
+            <div class="feature-card" style="margin: 20px 0;">
+                <h3>🏆 Achievement Unlocked</h3>
+                <div class="feature-list">
+                    🌌 Shadow Realm Master<br>
+                    🌲 Forest Guardian Defeated<br>
+                    🔮 Crystal Cave Explorer<br>
+                    ⚔️ Boss Arena Champion
+                </div>
+            </div>
+            
+            <button onclick="restartGame()">🚀 Play Again</button>
         </div>
         
-        <div id="levelCompleteScreen" class="screen hidden">
-            <h1>Level Complete!</h1>
-            <p id="levelCompleteText">Moving to next biome...</p>
-            <button onclick="nextLevel()">Continue</button>
+        <!-- Level Transition Screen -->
+        <div id="levelTransitionScreen" class="screen hidden">
+            <h1>🌟 Biome Complete!</h1>
+            <p class="biome-indicator" id="nextBiomeName">Entering Next Realm...</p>
+            <div class="loading-spinner"></div>
+            <p>Prepare for greater challenges ahead!</p>
+            <p>Your abilities grow stronger with each realm conquered.</p>
+        </div>
+        
+        <!-- Controls Help -->
+        <div class="controls-hint">
+            <strong>🎮 Advanced Controls</strong>
+            <div class="controls-grid">
+                <div>WASD/Arrows: Move</div>
+                <div>X: Echo Dash</div>
+                <div>W: Triple Jump</div>
+                <div>C: Time Slow</div>
+                <div>Z: Ground Slam</div>
+                <div>R: Restart (if stuck)</div>
+            </div>
         </div>
     </div>
 
+    <!-- Load Phaser.js -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+    
+    <!-- Load our enhanced game -->
+    <script src="game.js"></script>
+    
     <script>
-        // Complete EchoRealms: Shadow Odyssey Game Engine
-        class Game {
-            constructor() {
-                this.canvas = document.getElementById('gameCanvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.width = this.canvas.width;
-                this.height = this.canvas.height;
-                
-                this.gameState = 'start'; // start, playing, paused, gameOver, victory
-                this.currentLevel = 1;
-                this.maxLevel = 4;
-                this.score = 0;
-                
-                // Input
-                this.keys = {};
-                this.setupInput();
-                
-                // Game objects
-                this.player = new Player(50, 450);
-                this.platforms = [];
-                this.enemies = [];
-                this.collectibles = [];
-                this.particles = [];
-                
-                // Camera
-                this.camera = { x: 0, y: 0 };
-                this.screenShake = { x: 0, y: 0, intensity: 0 };
-                
-                // Load first level
-                this.loadLevel(1);
-                
-                // Start game loop
-                this.lastTime = performance.now();
-                this.gameLoop();
-            }
-            
-            setupInput() {
-                document.addEventListener('keydown', (e) => {
-                    this.keys[e.key.toLowerCase()] = true;
-                    if (e.key.toLowerCase() === 'r' && this.gameState === 'playing') {
-                        this.restartLevel();
-                    }
-                });
-                
-                document.addEventListener('keyup', (e) => {
-                    this.keys[e.key.toLowerCase()] = false;
-                });
-            }
-            
-            loadLevel(level) {
-                this.currentLevel = level;
-                this.platforms = [];
-                this.enemies = [];
-                this.collectibles = [];
-                this.particles = [];
-                
-                // Reset player
-                this.player.x = 50;
-                this.player.y = 450;
-                this.player.vx = 0;
-                this.player.vy = 0;
-                this.player.health = this.player.maxHealth;
-                this.player.energy = this.player.maxEnergy;
-                
-                switch(level) {
-                    case 1: this.loadShadowRealm(); break;
-                    case 2: this.loadForestKingdom(); break;
-                    case 3: this.loadCrystalCaves(); break;
-                    case 4: this.loadBossArena(); break;
-                }
-                
-                this.updateUI();
-            }
-            
-            loadShadowRealm() {
-                // Ground platform
-                this.platforms.push(new Platform(0, 550, 1000, 50, '#334455'));
-                
-                // Floating platforms
-                this.platforms.push(new Platform(150, 450, 100, 20, '#445566'));
-                this.platforms.push(new Platform(350, 350, 120, 20, '#445566'));
-                this.platforms.push(new Platform(550, 250, 100, 20, '#445566'));
-                this.platforms.push(new Platform(750, 150, 120, 20, '#445566'));
-                
-                // Shadow enemies
-                this.enemies.push(new Enemy(200, 500, 'shadow'));
-                this.enemies.push(new Enemy(400, 300, 'shadow'));
-                this.enemies.push(new Enemy(600, 200, 'shadow'));
-                
-                // Collectibles
-                this.collectibles.push(new Orb(180, 420));
-                this.collectibles.push(new Orb(380, 320));
-                this.collectibles.push(new Orb(580, 220));
-                this.collectibles.push(new Orb(780, 120));
-                this.collectibles.push(new Key(800, 120));
-            }
-            
-            loadForestKingdom() {
-                // Organic platforms
-                this.platforms.push(new Platform(0, 550, 1000, 50, '#2d5a2d'));
-                this.platforms.push(new Platform(100, 480, 80, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(250, 420, 90, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(400, 360, 100, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(550, 300, 85, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(700, 240, 110, 15, '#3d6a3d'));
-                this.platforms.push(new Platform(850, 180, 120, 15, '#3d6a3d'));
-                
-                // Forest enemies
-                this.enemies.push(new Enemy(150, 450, 'forest'));
-                this.enemies.push(new Enemy(320, 390, 'forest'));
-                this.enemies.push(new Enemy(480, 330, 'forest'));
-                this.enemies.push(new Enemy(630, 270, 'forest'));
-                
-                // Forest collectibles
-                this.collectibles.push(new Orb(130, 450));
-                this.collectibles.push(new Orb(280, 390));
-                this.collectibles.push(new Orb(430, 330));
-                this.collectibles.push(new Orb(580, 270));
-                this.collectibles.push(new Key(900, 150));
-            }
-            
-            loadCrystalCaves() {
-                // Crystal platforms
-                this.platforms.push(new Platform(0, 550, 1000, 50, '#442244'));
-                this.platforms.push(new Platform(120, 480, 100, 20, '#553355'));
-                this.platforms.push(new Platform(280, 420, 90, 20, '#553355'));
-                this.platforms.push(new Platform(430, 360, 110, 20, '#553355'));
-                this.platforms.push(new Platform(580, 300, 100, 20, '#553355'));
-                this.platforms.push(new Platform(730, 240, 120, 20, '#553355'));
-                
-                // Crystal enemies (tougher)
-                this.enemies.push(new Enemy(180, 450, 'crystal'));
-                this.enemies.push(new Enemy(350, 390, 'crystal'));
-                this.enemies.push(new Enemy(500, 330, 'crystal'));
-                this.enemies.push(new Enemy(650, 270, 'crystal'));
-                
-                // Crystal collectibles
-                this.collectibles.push(new Orb(150, 450));
-                this.collectibles.push(new Orb(310, 390));
-                this.collectibles.push(new Orb(460, 330));
-                this.collectibles.push(new Orb(610, 270));
-                this.collectibles.push(new Key(780, 210));
-            }
-            
-            loadBossArena() {
-                // Boss arena platforms
-                this.platforms.push(new Platform(0, 550, 1000, 50, '#552222'));
-                this.platforms.push(new Platform(100, 450, 80, 20, '#663333'));
-                this.platforms.push(new Platform(300, 400, 100, 20, '#663333'));
-                this.platforms.push(new Platform(500, 350, 120, 20, '#663333'));
-                this.platforms.push(new Platform(700, 400, 100, 20, '#663333'));
-                this.platforms.push(new Platform(850, 450, 80, 20, '#663333'));
-                
-                // Shadow King boss
-                this.enemies.push(new ShadowKing(500, 250));
-                
-                // Final collectibles
-                this.collectibles.push(new Orb(150, 420));
-                this.collectibles.push(new Orb(350, 370));
-                this.collectibles.push(new Orb(750, 370));
-                this.collectibles.push(new Key(900, 420));
-            }
-            
-            update(deltaTime) {
-                if (this.gameState !== 'playing') return;
-                
-                // Update player
-                this.player.update(this.keys, deltaTime);
-                
-                // Check platform collisions
-                this.checkPlatformCollisions();
-                
-                // Update enemies
-                for (let i = this.enemies.length - 1; i >= 0; i--) {
-                    const enemy = this.enemies[i];
-                    enemy.update(deltaTime);
-                    
-                    // Check collision with player
-                    if (this.checkCollision(this.player, enemy)) {
-                        if (this.player.isGroundSlamming && this.player.vy > 0) {
-                            // Player defeats enemy with ground slam
-                            this.enemies.splice(i, 1);
-                            this.addParticleExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ff6666');
-                            this.addScreenShake(5);
-                            this.score += 100;
-                        } else if (!this.player.invulnerable) {
-                            // Player takes damage
-                            this.player.takeDamage(25);
-                            this.addScreenShake(3);
-                        }
-                    }
-                }
-                
-                // Update collectibles
-                for (let i = this.collectibles.length - 1; i >= 0; i--) {
-                    const collectible = this.collectibles[i];
-                    if (this.checkCollision(this.player, collectible)) {
-                        if (collectible instanceof Orb) {
-                            this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + 20);
-                            this.score += 50;
-                        } else if (collectible instanceof Key) {
-                            this.player.health = Math.min(this.player.maxHealth, this.player.health + 25);
-                            this.score += 200;
-                        }
-                        
-                        this.collectibles.splice(i, 1);
-                        this.addParticleBurst(collectible.x + collectible.width/2, collectible.y + collectible.height/2, collectible.color);
-                    }
-                }
-                
-                // Update camera
-                this.updateCamera();
-                
-                // Update particles
-                this.updateParticles(deltaTime);
-                
-                // Update screen shake
-                if (this.screenShake.intensity > 0) {
-                    this.screenShake.x = (Math.random() - 0.5) * this.screenShake.intensity;
-                    this.screenShake.y = (Math.random() - 0.5) * this.screenShake.intensity;
-                    this.screenShake.intensity *= 0.9;
-                    if (this.screenShake.intensity < 0.1) {
-                        this.screenShake.intensity = 0;
-                        this.screenShake.x = 0;
-                        this.screenShake.y = 0;
-                    }
-                }
-                
-                // Check level completion
-                if (this.collectibles.filter(c => c instanceof Key).length === 0) {
-                    this.completeLevel();
-                }
-                
-                // Check game over
-                if (this.player.health <= 0) {
-                    this.gameOver();
-                }
-                
-                this.updateUI();
-            }
-            
-            checkPlatformCollisions() {
-                this.player.grounded = false;
-                
-                for (let platform of this.platforms) {
-                    if (this.checkCollision(this.player, platform)) {
-                        // Calculate overlap
-                        const overlapX = Math.min(
-                            this.player.x + this.player.width - platform.x,
-                            platform.x + platform.width - this.player.x
-                        );
-                        const overlapY = Math.min(
-                            this.player.y + this.player.height - platform.y,
-                            platform.y + platform.height - this.player.y
-                        );
-                        
-                        if (overlapX < overlapY) {
-                            // Horizontal collision
-                            if (this.player.x < platform.x) {
-                                this.player.x = platform.x - this.player.width;
-                            } else {
-                                this.player.x = platform.x + platform.width;
-                            }
-                            this.player.vx = 0;
-                        } else {
-                            // Vertical collision
-                            if (this.player.y < platform.y) {
-                                // Landing on platform
-                                this.player.y = platform.y - this.player.height;
-                                this.player.vy = 0;
-                                this.player.grounded = true;
-                                this.player.jumpsRemaining = this.player.maxJumps;
-                                
-                                // Ground slam effect
-                                if (this.player.isGroundSlamming) {
-                                    this.player.isGroundSlamming = false;
-                                    this.addScreenShake(8);
-                                    this.addParticleExplosion(this.player.x + this.player.width/2, this.player.y + this.player.height, '#ffaa44');
-                                }
-                            } else {
-                                // Hitting platform from below
-                                this.player.y = platform.y + platform.height;
-                                this.player.vy = 0;
-                            }
-                        }
-                    }
-                }
-            }
-            
-            updateCamera() {
-                const targetX = this.player.x - this.width / 2;
-                const targetY = this.player.y - this.height / 2;
-                
-                this.camera.x += (targetX - this.camera.x) * 0.1;
-                this.camera.y += (targetY - this.camera.y) * 0.1;
-                
-                // Clamp camera
-                this.camera.x = Math.max(0, Math.min(this.camera.x, 1000 - this.width));
-                this.camera.y = Math.max(-200, Math.min(this.camera.y, 0));
-            }
-            
-            checkCollision(rect1, rect2) {
-                return rect1.x < rect2.x + rect2.width &&
-                       rect1.x + rect1.width > rect2.x &&
-                       rect1.y < rect2.y + rect2.height &&
-                       rect1.y + rect1.height > rect2.y;
-            }
-            
-            addParticleBurst(x, y, color) {
-                for (let i = 0; i < 8; i++) {
-                    const angle = (Math.PI * 2 / 8) * i;
-                    this.particles.push({
-                        x: x, y: y,
-                        vx: Math.cos(angle) * 4,
-                        vy: Math.sin(angle) * 4,
-                        life: 500,
-                        maxLife: 500,
-                        color: color,
-                        size: 3
-                    });
-                }
-            }
-            
-            addParticleExplosion(x, y, color) {
-                for (let i = 0; i < 15; i++) {
-                    this.particles.push({
-                        x: x + (Math.random() - 0.5) * 20,
-                        y: y + (Math.random() - 0.5) * 20,
-                        vx: (Math.random() - 0.5) * 8,
-                        vy: (Math.random() - 0.5) * 8 - 2,
-                        life: 800,
-                        maxLife: 800,
-                        color: color,
-                        size: 4
-                    });
-                }
-            }
-            
-            addParticleTrail(x, y, color) {
-                this.particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    life: 300,
-                    maxLife: 300,
-                    color: color,
-                    size: 2
-                });
-            }
-            
-            updateParticles(deltaTime) {
-                for (let i = this.particles.length - 1; i >= 0; i--) {
-                    const particle = this.particles[i];
-                    particle.x += particle.vx;
-                    particle.y += particle.vy;
-                    particle.vy += 0.2; // gravity
-                    particle.life -= deltaTime;
-                    
-                    if (particle.life <= 0) {
-                        this.particles.splice(i, 1);
-                    }
-                }
-            }
-            
-            addScreenShake(intensity) {
-                this.screenShake.intensity = Math.max(this.screenShake.intensity, intensity);
-            }
-            
-            completeLevel() {
-                if (this.currentLevel < this.maxLevel) {
-                    this.gameState = 'levelComplete';
-                    document.getElementById('levelCompleteScreen').classList.remove('hidden');
-                    const levelNames = ['', 'Shadow Realm', 'Forest Kingdom', 'Crystal Caves', 'Boss Arena'];
-                    document.getElementById('levelCompleteText').textContent = `Moving to ${levelNames[this.currentLevel + 1]}...`;
-                } else {
-                    this.victory();
-                }
-            }
-            
-            victory() {
-                this.gameState = 'victory';
-                document.getElementById('victoryScreen').classList.remove('hidden');
-            }
-            
-            gameOver() {
-                this.gameState = 'gameOver';
-                document.getElementById('gameOverScreen').classList.remove('hidden');
-            }
-            
-            updateUI() {
-                // Health bar
-                const healthPercent = (this.player.health / this.player.maxHealth) * 100;
-                document.querySelector('#healthBar .bar-fill').style.width = healthPercent + '%';
-                
-                // Energy bar
-                const energyPercent = (this.player.energy / this.player.maxEnergy) * 100;
-                document.querySelector('#energyBar .bar-fill').style.width = energyPercent + '%';
-                
-                // Stats
-                document.getElementById('level').textContent = this.currentLevel;
-                document.getElementById('orbs').textContent = this.collectibles.filter(c => c instanceof Orb).length;
-                document.getElementById('score').textContent = this.score;
-            }
-            
-            render() {
-                // Clear canvas with biome background
-                const biomeColors = {
-                    1: ['#001a33', '#002266'], // Shadow Realm
-                    2: ['#001a00', '#003300'], // Forest Kingdom
-                    3: ['#1a001a', '#330033'], // Crystal Caves
-                    4: ['#1a0000', '#330000']  // Boss Arena
-                };
-                
-                const colors = biomeColors[this.currentLevel] || biomeColors[1];
-                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
-                gradient.addColorStop(0, colors[0]);
-                gradient.addColorStop(1, colors[1]);
-                this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(0, 0, this.width, this.height);
-                
-                if (this.gameState !== 'playing') return;
-                
-                // Apply camera and screen shake
-                this.ctx.save();
-                this.ctx.translate(-this.camera.x + this.screenShake.x, -this.camera.y + this.screenShake.y);
-                
-                // Render platforms
-                for (let platform of this.platforms) {
-                    platform.render(this.ctx);
-                }
-                
-                // Render collectibles
-                for (let collectible of this.collectibles) {
-                    collectible.render(this.ctx);
-                }
-                
-                // Render enemies
-                for (let enemy of this.enemies) {
-                    enemy.render(this.ctx);
-                }
-                
-                // Render player
-                this.player.render(this.ctx);
-                
-                // Render particles
-                for (let particle of this.particles) {
-                    const alpha = particle.life / particle.maxLife;
-                    this.ctx.save();
-                    this.ctx.globalAlpha = alpha;
-                    this.ctx.fillStyle = particle.color;
-                    this.ctx.fillRect(particle.x - particle.size/2, particle.y - particle.size/2, particle.size, particle.size);
-                    this.ctx.restore();
-                }
-                
-                this.ctx.restore();
-            }
-            
-            gameLoop() {
-                const currentTime = performance.now();
-                const deltaTime = currentTime - this.lastTime;
-                this.lastTime = currentTime;
-                
-                this.update(deltaTime);
-                this.render();
-                
-                requestAnimationFrame(() => this.gameLoop());
-            }
-        }
-        
-        // Player Class
-        class Player {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.width = 32;
-                this.height = 48;
-                this.vx = 0;
-                this.vy = 0;
-                this.speed = 6;
-                this.jumpPower = 16;
-                this.maxJumps = 3;
-                this.jumpsRemaining = this.maxJumps;
-                this.grounded = false;
-                
-                this.maxHealth = 100;
-                this.health = this.maxHealth;
-                this.maxEnergy = 100;
-                this.energy = this.maxEnergy;
-                
-                // Abilities
-                this.invulnerable = false;
-                this.invulnerabilityTime = 0;
-                this.isGroundSlamming = false;
-                this.dashCooldown = 0;
-                this.timeSlowActive = false;
-                this.timeSlowCooldown = 0;
-                
-                this.color = '#66ccff';
-            }
-            
-            update(keys, deltaTime) {
-                // Energy regeneration
-                if (this.energy < this.maxEnergy) {
-                    this.energy = Math.min(this.maxEnergy, this.energy + 0.3);
-                }
-                
-                // Cooldowns
-                if (this.dashCooldown > 0) this.dashCooldown -= deltaTime;
-                if (this.timeSlowCooldown > 0) this.timeSlowCooldown -= deltaTime;
-                if (this.invulnerabilityTime > 0) {
-                    this.invulnerabilityTime -= deltaTime;
-                    if (this.invulnerabilityTime <= 0) {
-                        this.invulnerable = false;
-                    }
-                }
-                
-                // Movement
-                if (keys['a'] || keys['arrowleft']) {
-                    this.vx = -this.speed;
-                } else if (keys['d'] || keys['arrowright']) {
-                    this.vx = this.speed;
-                } else {
-                    this.vx *= 0.8;
-                }
-                
-                // Triple Jump
-                if ((keys['w'] || keys['arrowup'] || keys[' ']) && this.jumpsRemaining > 0) {
-                    if (!keys._jumpPressed) {
-                        this.vy = -this.jumpPower;
-                        this.jumpsRemaining--;
-                        this.grounded = false;
-                        keys._jumpPressed = true;
-                        
-                        // Jump particles
-                        for (let i = 0; i < 6; i++) {
-                            const angle = (Math.PI * 2 / 6) * i;
-                            game.addParticleTrail(
-                                this.x + this.width/2 + Math.cos(angle) * 15,
-                                this.y + this.height + Math.sin(angle) * 15,
-                                '#66ccff'
-                            );
-                        }
-                    }
-                } else {
-                    keys._jumpPressed = false;
-                }
-                
-                // Echo Dash
-                if (keys['x'] && this.dashCooldown <= 0 && this.energy >= 25) {
-                    if (!keys._dashPressed) {
-                        const direction = keys['a'] || keys['arrowleft'] ? -1 : 1;
-                        this.vx = direction * 15;
-                        this.invulnerable = true;
-                        this.invulnerabilityTime = 300;
-                        this.energy -= 25;
-                        this.dashCooldown = 1000;
-                        keys._dashPressed = true;
-                        
-                        // Dash particles
-                        for (let i = 0; i < 10; i++) {
-                            game.addParticleTrail(
-                                this.x + this.width/2,
-                                this.y + this.height/2,
-                                '#66ccff'
-                            );
-                        }
-                    }
-                } else {
-                    keys._dashPressed = false;
-                }
-                
-                // Time Slow
-                if (keys['c'] && this.timeSlowCooldown <= 0 && this.energy >= 30) {
-                    if (!keys._timeSlowPressed) {
-                        this.timeSlowActive = true;
-                        this.energy -= 30;
-                        this.timeSlowCooldown = 2000;
-                        keys._timeSlowPressed = true;
-                    }
-                } else {
-                    keys._timeSlowPressed = false;
-                    this.timeSlowActive = false;
-                }
-                
-                // Ground Slam
-                if ((keys['s'] || keys['arrowdown']) && !this.grounded && this.energy >= 20) {
-                    if (!keys._slamPressed) {
-                        this.vy = 20;
-                        this.isGroundSlamming = true;
-                        this.energy -= 20;
-                        keys._slamPressed = true;
-                    }
-                } else {
-                    keys._slamPressed = false;
-                }
-                
-                // Gravity
-                if (!this.grounded) {
-                    this.vy += 0.8;
-                }
-                
-                // Apply velocity with time slow
-                const timeScale = this.timeSlowActive ? 0.3 : 1;
-                this.x += this.vx * timeScale;
-                this.y += this.vy * timeScale;
-                
-                // Bounds
-                if (this.x < 0) this.x = 0;
-                if (this.x + this.width > 1000) this.x = 1000 - this.width;
-                if (this.y > 700) {
-                    this.takeDamage(50); // Fall damage
-                    this.y = 400;
-                }
-            }
-            
-            takeDamage(amount) {
-                if (this.invulnerable) return;
-                
-                this.health = Math.max(0, this.health - amount);
-                this.invulnerable = true;
-                this.invulnerabilityTime = 1000;
-            }
-            
-            render(ctx) {
-                // Invulnerability flashing
-                if (this.invulnerable && Math.floor(Date.now() / 100) % 2) {
-                    ctx.globalAlpha = 0.5;
-                }
-                
-                // Time slow effect
-                if (this.timeSlowActive) {
-                    ctx.shadowColor = '#0066ff';
-                    ctx.shadowBlur = 10;
-                }
-                
-                // Player body
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                // Eyes
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(this.x + 8, this.y + 12, 6, 6);
-                ctx.fillRect(this.x + 18, this.y + 12, 6, 6);
-                
-                // Ground slam aura
-                if (this.isGroundSlamming) {
-                    ctx.strokeStyle = '#ffaa44';
-                    ctx.lineWidth = 3;
-                    ctx.strokeRect(this.x - 5, this.y - 5, this.width + 10, this.height + 10);
-                }
-                
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1;
-            }
-        }
-        
-        // Enemy Class
-        class Enemy {
-            constructor(x, y, type) {
-                this.x = x;
-                this.y = y;
-                this.width = 28;
-                this.height = 36;
-                this.vx = 2;
-                this.direction = 1;
-                this.type = type;
-                this.health = 50;
-                this.patrolRange = 150;
-                this.startX = x;
-                
-                const colors = {
-                    shadow: '#8844aa',
-                    forest: '#44aa44',
-                    crystal: '#aa44aa'
-                };
-                this.color = colors[type] || colors.shadow;
-            }
-            
-            update(deltaTime) {
-                // Patrol AI
-                this.x += this.vx * this.direction;
-                
-                if (this.x < this.startX - this.patrolRange || this.x > this.startX + this.patrolRange) {
-                    this.direction *= -1;
-                }
-                
-                // Simple gravity
-                this.y += 0.5;
-                if (this.y > 520) this.y = 520;
-            }
-            
-            render(ctx) {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                // Glow effect
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 8;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.shadowBlur = 0;
-                
-                // Eyes
-                ctx.fillStyle = '#ff4444';
-                ctx.fillRect(this.x + 6, this.y + 8, 4, 4);
-                ctx.fillRect(this.x + 18, this.y + 8, 4, 4);
-            }
-        }
-        
-        // Shadow King Boss
-        class ShadowKing extends Enemy {
-            constructor(x, y) {
-                super(x, y, 'boss');
-                this.width = 64;
-                this.height = 80;
-                this.health = 200;
-                this.maxHealth = 200;
-                this.color = '#aa2222';
-                this.attackTimer = 0;
-                this.phase = 1;
-            }
-            
-            update(deltaTime) {
-                this.attackTimer += deltaTime;
-                
-                // Phase changes
-                if (this.health < this.maxHealth * 0.66 && this.phase === 1) {
-                    this.phase = 2;
-                    this.color = '#cc4444';
-                } else if (this.health < this.maxHealth * 0.33 && this.phase === 2) {
-                    this.phase = 3;
-                    this.color = '#ff6666';
-                }
-                
-                // Attack patterns
-                if (this.attackTimer > 1500) {
-                    this.attack();
-                    this.attackTimer = 0;
-                }
-                
-                super.update(deltaTime);
-            }
-            
-            attack() {
-                // Create shadow projectiles in multiple directions
-                const projectileCount = this.phase + 3;
-                for (let i = 0; i < projectileCount; i++) {
-                    const angle = (Math.PI * 2 / projectileCount) * i;
-                    game.addParticleExplosion(
-                        this.x + this.width/2,
-                        this.y + this.height/2,
-                        this.color
-                    );
-                }
-                game.addScreenShake(3);
-            }
-            
-            render(ctx) {
-                super.render(ctx);
-                
-                // Boss health bar
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(this.x - 20, this.y - 30, this.width + 40, 12);
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x - 20, this.y - 30, (this.width + 40) * (this.health / this.maxHealth), 12);
-                
-                // Crown
-                ctx.fillStyle = '#ffdd00';
-                ctx.fillRect(this.x + 20, this.y - 15, 24, 8);
-                ctx.fillRect(this.x + 22, this.y - 20, 4, 8);
-                ctx.fillRect(this.x + 30, this.y - 25, 4, 13);
-                ctx.fillRect(this.x + 38, this.y - 20, 4, 8);
-            }
-        }
-        
-        // Platform Class
-        class Platform {
-            constructor(x, y, width, height, color) {
-                this.x = x;
-                this.y = y;
-                this.width = width;
-                this.height = height;
-                this.color = color;
-            }
-            
-            render(ctx) {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                // Add highlight
-                ctx.fillStyle = this.color + '44';
-                ctx.fillRect(this.x, this.y, this.width, 3);
-            }
-        }
-        
-        // Orb Class
-        class Orb {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.width = 16;
-                this.height = 16;
-                this.color = '#ffdd44';
-                this.glow = 0;
-            }
-            
-            render(ctx) {
-                this.glow += 0.05;
-                
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 10 + Math.sin(this.glow) * 5;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            }
-        }
-        
-        // Key Class
-        class Key {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.width = 20;
-                this.height = 12;
-                this.color = '#44ff44';
-                this.glow = 0;
-            }
-            
-            render(ctx) {
-                this.glow += 0.08;
-                
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 15 + Math.sin(this.glow) * 8;
-                ctx.fillStyle = this.color;
-                
-                // Key shape
-                ctx.fillRect(this.x, this.y + 4, 12, 4);
-                ctx.fillRect(this.x + 12, this.y, 4, 8);
-                ctx.fillRect(this.x + 16, this.y + 2, 2, 2);
-                ctx.fillRect(this.x + 16, this.y + 6, 2, 2);
-                
-                ctx.shadowBlur = 0;
-            }
-        }
-        
-        // Global functions
-        let game;
+        // Global game management functions
+        let currentGame = null;
         
         function startGame() {
             document.getElementById('startScreen').classList.add('hidden');
-            game = new Game();
-            game.gameState = 'playing';
+            
+            // Initialize the enhanced Phaser.js game
+            if (currentGame) {
+                currentGame.destroy(true);
+            }
+            
+            // The game is automatically started by the game.js file
+            console.log('🎆 EchoRealms: Shadow Odyssey Enhanced Edition Started!');
+            console.log('🎮 Features: 4 Biomes, Advanced Movement, Dynamic AI, Particle Effects');
         }
         
         function restartGame() {
+            // Hide all overlay screens
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('victoryScreen').classList.add('hidden');
-            game.loadLevel(1);
-            game.score = 0;
-            game.gameState = 'playing';
+            document.getElementById('levelTransitionScreen').classList.add('hidden');
+            
+            // Restart the Phaser game
+            if (window.enhancedGame && window.enhancedGame.scene) {
+                window.enhancedGame.scene.scenes.forEach(scene => {
+                    if (scene.scene.key === 'AdvancedMainScene') {
+                        scene.scene.restart();
+                    }
+                });
+            }
         }
         
-        function nextLevel() {
-            document.getElementById('levelCompleteScreen').classList.add('hidden');
-            game.loadLevel(game.currentLevel + 1);
-            game.gameState = 'playing';
+        function returnToMenu() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+        
+        function showGameOver(score = 0) {
+            document.getElementById('finalScore').textContent = `Final Score: ${score}`;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+        
+        function showVictory(score = 0) {
+            document.getElementById('victoryScore').textContent = `Final Score: ${score}`;
+            document.getElementById('victoryScreen').classList.remove('hidden');
+        }
+        
+        function showBiomeTransition(biomeName) {
+            document.getElementById('nextBiomeName').textContent = `Entering: ${biomeName}`;
+            document.getElementById('levelTransitionScreen').classList.remove('hidden');
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                document.getElementById('levelTransitionScreen').classList.add('hidden');
+            }, 3000);
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎆 EchoRealms: Shadow Odyssey Enhanced Edition Loaded');
+            console.log('🚀 Ready to begin your journey through the realms!');
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // ESC to return to menu (if not playing)
+                if (e.key === 'Escape' && !document.getElementById('startScreen').classList.contains('hidden')) {
+                    // Already on start screen
+                } else if (e.key === 'Escape') {
+                    returnToMenu();
+                }
+                
+                // Enter to start game from menu
+                if (e.key === 'Enter' && !document.getElementById('startScreen').classList.contains('hidden')) {
+                    startGame();
+                }
+            });
+        });
+        
+        // Global error handling
+        window.addEventListener('error', (e) => {
+            console.error('😨 Game Error:', e.error);
+            // Could show an error screen here if needed
+        });
+        
+        // Performance monitoring
+        if (typeof performance !== 'undefined' && performance.mark) {
+            performance.mark('game-load-start');
+            window.addEventListener('load', () => {
+                performance.mark('game-load-end');
+                performance.measure('game-load-time', 'game-load-start', 'game-load-end');
+                const measure = performance.getEntriesByName('game-load-time')[0];
+                console.log(`⏱️ Game loaded in ${Math.round(measure.duration)}ms`);
+            });
         }
     </script>
 </body>

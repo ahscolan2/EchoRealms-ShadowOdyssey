@@ -204,10 +204,18 @@
                 this.enemies = [];
                 this.collectibles = [];
                 this.particles = [];
+                this.floatingTexts = [];
                 
-                // Camera
-                this.camera = { x: 0, y: 0 };
+                // Camera with deadzone
+                this.camera = { x: 0, y: 0, deadzone: 200 };
                 this.screenShake = { x: 0, y: 0, intensity: 0 };
+                
+                // Parallax layers
+                this.parallaxLayers = [];
+                
+                // Audio system
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.soundEnabled = this.settings.sfxVolume > 0;
                 
                 // Load first level
                 this.loadLevel(1);
@@ -238,6 +246,10 @@
                 this.enemies = [];
                 this.collectibles = [];
                 this.particles = [];
+                this.floatingTexts = [];
+                
+                // Create parallax background layers for this biome
+                this.createParallaxLayers();
                 
                 // Reset player
                 this.player.x = 50;
@@ -641,6 +653,7 @@
                 for (let hazard of this.hazards) {
                     if (this.checkCollision(this.player, hazard) && !this.player.invulnerable) {
                         this.player.takeDamage(30);
+                        this.addFloatingText('-30', this.player.x + this.player.width/2, this.player.y, '#ff3333', 18);
                         this.addScreenShake(5);
                     }
                 }
@@ -658,6 +671,8 @@
                             this.addParticleExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#ff6666');
                             this.addScreenShake(5);
                             this.score += 100;
+                            this.addFloatingText('+100', enemy.x + enemy.width/2, enemy.y, '#ffdd00', 20);
+                            this.playSound('enemy_defeat');
                             
                             // Achievement check
                             if (enemy instanceof ShadowKing) {
@@ -666,7 +681,9 @@
                         } else if (!this.player.invulnerable) {
                             // Player takes damage
                             this.player.takeDamage(25);
+                            this.addFloatingText('-25', this.player.x + this.player.width/2, this.player.y, '#ff4444', 18);
                             this.addScreenShake(3);
+                            this.playSound('hit');
                         }
                     }
                 }
@@ -678,13 +695,16 @@
                         if (collectible instanceof Orb) {
                             this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + 20);
                             this.score += 50;
+                            this.addFloatingText('+50', collectible.x + collectible.width/2, collectible.y, '#ffdd00', 16);
                         } else if (collectible instanceof Key) {
                             this.player.health = Math.min(this.player.maxHealth, this.player.health + 25);
                             this.score += 200;
+                            this.addFloatingText('+200', collectible.x + collectible.width/2, collectible.y, '#00ff88', 20);
                         }
                         
                         this.collectibles.splice(i, 1);
                         this.addParticleBurst(collectible.x + collectible.width/2, collectible.y + collectible.height/2, collectible.color);
+                        this.playSound('collect');
                     }
                 }
                 
@@ -693,6 +713,12 @@
                 
                 // Update particles
                 this.updateParticles(deltaTime);
+                
+                // Update floating texts
+                this.updateFloatingTexts(deltaTime);
+                
+                // Update parallax layers
+                this.updateParallaxLayers();
                 
                 // Update screen shake
                 if (this.screenShake.intensity > 0) {
@@ -776,11 +802,20 @@
             }
             
             updateCamera() {
+                // Improved camera with deadzone
                 const targetX = this.player.x - this.width / 2;
                 const targetY = this.player.y - this.height / 2;
                 
-                this.camera.x += (targetX - this.camera.x) * 0.1;
-                this.camera.y += (targetY - this.camera.y) * 0.1;
+                // Only move camera if player is outside deadzone
+                const deltaX = targetX - this.camera.x;
+                const deltaY = targetY - this.camera.y;
+                
+                if (Math.abs(deltaX) > this.camera.deadzone / 2) {
+                    this.camera.x += deltaX * 0.08;
+                }
+                if (Math.abs(deltaY) > this.camera.deadzone / 2) {
+                    this.camera.y += deltaY * 0.08;
+                }
                 
                 // Clamp camera
                 this.camera.x = Math.max(0, Math.min(this.camera.x, 1000 - this.width));
@@ -854,9 +889,100 @@
                 this.screenShake.intensity = Math.max(this.screenShake.intensity, intensity);
             }
             
+            addFloatingText(text, x, y, color, size) {
+                this.floatingTexts.push({
+                    text: text,
+                    x: x,
+                    y: y,
+                    vy: -2,
+                    life: 1000,
+                    maxLife: 1000,
+                    color: color,
+                    size: size
+                });
+            }
+            
+            updateFloatingTexts(deltaTime) {
+                for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+                    const text = this.floatingTexts[i];
+                    text.y += text.vy;
+                    text.vy += 0.05; // Slight deceleration
+                    text.life -= deltaTime;
+                    
+                    if (text.life <= 0) {
+                        this.floatingTexts.splice(i, 1);
+                    }
+                }
+            }
+            
+            createParallaxLayers() {
+                this.parallaxLayers = [];
+                
+                // Get biome-specific colors
+                const biomeIdx = Math.ceil(this.currentLevel / 3);
+                const layerConfigs = {
+                    1: [ // Shadow Realm
+                        { color: '#001122', speed: 0.1, alpha: 0.3 },
+                        { color: '#002244', speed: 0.3, alpha: 0.4 },
+                        { color: '#003366', speed: 0.5, alpha: 0.5 }
+                    ],
+                    2: [ // Forest Kingdom
+                        { color: '#001100', speed: 0.1, alpha: 0.3 },
+                        { color: '#002200', speed: 0.3, alpha: 0.4 },
+                        { color: '#003300', speed: 0.5, alpha: 0.5 }
+                    ],
+                    3: [ // Crystal Caves
+                        { color: '#110011', speed: 0.1, alpha: 0.3 },
+                        { color: '#220022', speed: 0.3, alpha: 0.4 },
+                        { color: '#330033', speed: 0.5, alpha: 0.5 }
+                    ],
+                    4: [ // Boss Arena
+                        { color: '#110000', speed: 0.1, alpha: 0.3 },
+                        { color: '#220000', speed: 0.3, alpha: 0.4 },
+                        { color: '#330000', speed: 0.5, alpha: 0.5 }
+                    ]
+                };
+                
+                const configs = layerConfigs[biomeIdx] || layerConfigs[1];
+                for (let config of configs) {
+                    this.parallaxLayers.push({
+                        particles: this.generateParallaxParticles(20),
+                        speed: config.speed,
+                        color: config.color,
+                        alpha: config.alpha
+                    });
+                }
+            }
+            
+            generateParallaxParticles(count) {
+                const particles = [];
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random() * 1500,
+                        y: Math.random() * 600,
+                        size: Math.random() * 3 + 1,
+                        vx: (Math.random() - 0.5) * 0.5
+                    });
+                }
+                return particles;
+            }
+            
+            updateParallaxLayers() {
+                for (let layer of this.parallaxLayers) {
+                    for (let particle of layer.particles) {
+                        particle.x += particle.vx;
+                        
+                        // Wrap around
+                        if (particle.x < -10) particle.x = 1510;
+                        if (particle.x > 1510) particle.x = -10;
+                    }
+                }
+            }
+            
             completeLevel() {
                 // Save progress
                 this.saveProgress();
+                this.playSound('levelComplete');
                 
                 if (this.currentLevel < this.maxLevel) {
                     this.gameState = 'levelComplete';
@@ -982,6 +1108,19 @@
                 
                 if (this.gameState !== 'playing') return;
                 
+                // Render parallax background layers
+                for (let layer of this.parallaxLayers) {
+                    this.ctx.save();
+                    this.ctx.globalAlpha = layer.alpha;
+                    this.ctx.translate(-this.camera.x * layer.speed, -this.camera.y * layer.speed);
+                    
+                    for (let particle of layer.particles) {
+                        this.ctx.fillStyle = layer.color;
+                        this.ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                    }
+                    this.ctx.restore();
+                }
+                
                 // Apply camera and screen shake
                 this.ctx.save();
                 this.ctx.translate(-this.camera.x + this.screenShake.x, -this.camera.y + this.screenShake.y);
@@ -1024,7 +1163,78 @@
                     this.ctx.restore();
                 }
                 
+                // Render floating texts
+                for (let text of this.floatingTexts) {
+                    const alpha = text.life / text.maxLife;
+                    this.ctx.save();
+                    this.ctx.globalAlpha = alpha;
+                    this.ctx.fillStyle = text.color;
+                    this.ctx.font = `bold ${text.size}px monospace`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.strokeStyle = '#000000';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.strokeText(text.text, text.x, text.y);
+                    this.ctx.fillText(text.text, text.x, text.y);
+                    this.ctx.restore();
+                }
+                
                 this.ctx.restore();
+            }
+            
+            playSound(type) {
+                if (!this.soundEnabled || !this.audioContext) return;
+                
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                const volume = this.settings.sfxVolume;
+                gainNode.gain.setValueAtTime(volume * 0.3, this.audioContext.currentTime);
+                
+                switch(type) {
+                    case 'jump':
+                        oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(600, this.audioContext.currentTime + 0.1);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+                        oscillator.type = 'sine';
+                        break;
+                    case 'dash':
+                        oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.2);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+                        oscillator.type = 'sawtooth';
+                        break;
+                    case 'collect':
+                        oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(1200, this.audioContext.currentTime + 0.1);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+                        oscillator.type = 'square';
+                        break;
+                    case 'hit':
+                        oscillator.frequency.setValueAtTime(100, this.audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.1);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                        oscillator.type = 'sawtooth';
+                        break;
+                    case 'enemy_defeat':
+                        oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.3);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+                        oscillator.type = 'triangle';
+                        break;
+                    case 'levelComplete':
+                        oscillator.frequency.setValueAtTime(523, this.audioContext.currentTime);
+                        oscillator.frequency.setValueAtTime(659, this.audioContext.currentTime + 0.15);
+                        oscillator.frequency.setValueAtTime(784, this.audioContext.currentTime + 0.3);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                        oscillator.type = 'sine';
+                        break;
+                }
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.5);
             }
             
             gameLoop() {
@@ -1102,6 +1312,7 @@
                         this.jumpsRemaining--;
                         this.grounded = false;
                         keys._jumpPressed = true;
+                        game.playSound('jump');
                         
                         // Jump particles
                         for (let i = 0; i < 6; i++) {
@@ -1127,6 +1338,7 @@
                         this.energy -= 25;
                         this.dashCooldown = 1000;
                         keys._dashPressed = true;
+                        game.playSound('dash');
                         
                         // Dash particles
                         for (let i = 0; i < 10; i++) {

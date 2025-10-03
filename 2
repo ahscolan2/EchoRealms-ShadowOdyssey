@@ -1,194 +1,203 @@
-// EchoRealms: Shadow Odyssey - Main Game Code
-// Core game logic: Player class, MainScene, Phaser.Game init
-
-class Player extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y) {
-    super(scene, x, y, 'player');
-    scene.add.existing(this);
-    scene.physics.add.existing(this);
-
-    this.setBounce(0.2);
-    this.setCollideWorldBounds(true);
-    this.moveSpeed = 180;
-    this.jumpSpeed = 360;
-    this.defaultTint = 0x00d4ff;
-    this.movingTint = 0x00aadd;
-    this.setTint(this.defaultTint);
-  }
-
-  handleInput(cursors, wasd) {
-    this.setVelocityX(0);
-
-    const left = cursors.left?.isDown || wasd.A?.isDown;
-    const right = cursors.right?.isDown || wasd.D?.isDown;
-    const up = cursors.up?.isDown || wasd.W?.isDown;
-
-    if (left) {
-      this.setVelocityX(-this.moveSpeed);
-      this.setTint(this.movingTint);
-    } else if (right) {
-      this.setVelocityX(this.moveSpeed);
-      this.setTint(this.movingTint);
-    } else {
-      this.setTint(this.defaultTint);
-    }
-
-    if (up && this.body.touching.down) {
-      this.setVelocityY(-this.jumpSpeed);
-    }
-  }
-}
-
-class MainScene extends Phaser.Scene {
-  constructor() {
-    super('MainScene');
-    this.score = 0;
-    this.gameStarted = false;
-  }
-
-  preload() {
-    // Procedural textures
-    this.add.graphics().fillStyle(0x00d4ff).fillRect(0, 0, 32, 48).generateTexture('player', 32, 48);
-    this.add.graphics().fillStyle(0x333333).fillRect(0, 0, 400, 32).generateTexture('ground', 400, 32);
-    this.add.graphics().fillStyle(0x1a1a2e).fillRect(0, 0, 64, 16).generateTexture('platform', 64, 16);
-    this.add.graphics().fillStyle(0x4a0080).fillRect(0, 0, 16, 16).generateTexture('shadow-orb', 16, 16);
-    this.add.graphics().fillStyle(0x800040).fillRect(0, 0, 24, 24).generateTexture('enemy-shadow', 24, 24);
-  }
-
-  create() {
-    // World bounds
-    this.physics.world.setBounds(0, 0, 800, 600);
-
-    // Platforms
-    this.platforms = this.physics.add.staticGroup();
-    this.platforms.create(200, 584, 'ground');
-    this.platforms.create(600, 584, 'ground');
-    this.platforms.create(400, 400, 'platform');
-    this.platforms.create(150, 300, 'platform');
-    this.platforms.create(650, 220, 'platform');
-    this.platforms.create(300, 160, 'platform');
-
+    // Build initial biome and branching path
+    this.buildLevel(this.level);
     // Player
-    this.player = new Player(this, 100, 450);
-    this.physics.add.collider(this.player, this.platforms);
-
+    this.player = new Player(this, 80, 460);
+    // Enemy group
+    this.enemies = this.physics.add.group({ classType: Enemy, runChildUpdate: true });
+    this.spawnEnemies();
     // Collectibles
-    this.shadows = this.physics.add.group({ key: 'shadow-orb', repeat: 8, setXY: { x: 50, y: 0, stepX: 90 } });
-    this.shadows.children.iterate(child => {
-      child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-      child.setTint(0x9966ff);
-      child.body.setSize(12, 12);
-    });
-    this.physics.add.collider(this.shadows, this.platforms);
-    this.physics.add.overlap(this.player, this.shadows, this.collectShadow, null, this);
-
-    // Enemies
-    this.enemyShadows = this.physics.add.group();
-    const e1 = this.enemyShadows.create(400, 350, 'enemy-shadow');
-    e1.setBounce(1).setCollideWorldBounds(true).setVelocity(Phaser.Math.Between(-200, 200), 20).setTint(0xff3366);
-    const e2 = this.enemyShadows.create(650, 170, 'enemy-shadow');
-    e2.setBounce(1).setCollideWorldBounds(true).setVelocity(Phaser.Math.Between(-200, 200), 20).setTint(0xff3366);
-    this.physics.add.collider(this.enemyShadows, this.platforms);
-    this.physics.add.overlap(this.player, this.enemyShadows, this.hitEnemy, null, this);
-
-    // Input
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.wasd = this.input.keyboard.addKeys('W,S,A,D');
-
+    this.orbs = this.physics.add.group();
+    this.keys = this.physics.add.group();
+    this.shards = this.physics.add.group();
+    this.spawnCollectibles();
     // UI
-    this.scoreText = this.add.text(16, 16, 'Shadow Energy: 0', { fontSize: '20px', fill: '#00d4ff', fontFamily: 'Arial' });
-    this.add.text(16, 560 - 56, 'Arrow Keys / WASD to move\nCollect shadow orbs, avoid red shadows!', { fontSize: '14px', fill: '#cccccc', fontFamily: 'Arial' });
-
-    // Effects
-    this.shadowEffect = this.add.graphics();
-    this.shadowEffect.setDepth(1000);
-    this.shadowParticles = this.add.particles(400, 300, 'shadow-orb', {
-      speed: { min: 10, max: 50 },
-      scale: { start: 0.1, end: 0 },
-      blendMode: 'ADD',
-      lifespan: 2000,
-      frequency: 200,
-      tint: 0x4466ff,
-      emitZone: { type: 'random', source: new Phaser.Geom.Rectangle(0, 0, 800, 600) }
+    this.createUI();
+    // Collisions
+    this.physics.add.collider(this.player, this.platforms, () => {}, null, this);
+    this.physics.add.collider(this.enemies, this.platforms);
+    this.physics.add.overlap(this.player, this.enemies, () => this.player.takeDamage(1));
+    this.physics.add.overlap(this.player, this.orbs, (p, orb) => {
+      orb.destroy();
+      this.score += 10;
+      this.sound.play('sfx_pick', { volume: 0.4 });
+      this.events.emit('ui:score', this.score);
+    });
+    this.physics.add.overlap(this.player, this.shards, (p, s) => {
+      s.destroy();
+      this.player.inventory.shards++;
+      this.events.emit('ui:inventory', this.player.inventory);
+      this.sound.play('sfx_pick', { volume: 0.4, detune: 300 });
+    });
+    this.physics.add.overlap(this.player, this.keys, (p, k) => {
+      k.destroy();
+      this.player.inventory.keys++;
+      this.events.emit('ui:inventory', this.player.inventory);
+      this.sound.play('sfx_pick', { volume: 0.5, detune: -150 });
+    });
+    // Switch activation
+    this.switchSensors = this.physics.add.group();
+    this.switches.forEach(sw => {
+      const sensor = this.switchSensors.create(sw.x, sw.y, null);
+      sensor.body.setAllowGravity(false);
+      sensor.setCircle(18);
+      sensor.setVisible(false);
+    });
+    this.physics.add.overlap(this.player, this.switchSensors, (p, sensor) => {
+      const idx = this.switchSensors.getChildren().indexOf(sensor);
+      const sw = this.switches[idx];
+      if (sw && !sw.activated) sw.activate();
+    });
+    // Door listening
+    this.switchProgress = 0;
+    this.events.on('puzzle:switch', () => {
+      this.switchProgress++;
+      if (this.switchProgress >= this.switches.length) {
+        // Open all doors in current level branch
+        this.doors.forEach(d => d.open());
+      }
     });
 
-    this.gameStarted = true;
-    console.log('EchoRealms: Shadow Odyssey initialized successfully!');
+    // Physics debug toggle key
+    this.debugKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
+
+    // Controls
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.wasd = this.input.keyboard.addKeys({ W: 'W', A: 'A', S: 'S', D: 'D', SHIFT: 'SHIFT' });
+
+    // Camera
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.setZoom(1.2);
   }
 
-  update() {
-    if (!this.gameStarted) return;
+  createUI() {
+    // Health bar hearts
+    this.ui = {};
+    this.ui.hearts = this.add.group();
+    this.updateHearts(this.player.health, this.player.maxHealth);
+
+    // Inventory + score text
+    this.ui.text = this.add.text(10, 24, '', { fontFamily: 'monospace', fontSize: 12, color: '#cfe9ff' }).setScrollFactor(0);
+    this.events.on('ui:score', () => this.refreshUI());
+    this.events.on('ui:inventory', () => this.refreshUI());
+    this.events.on('player:health', (h, m) => this.updateHearts(h, m));
+    this.refreshUI();
+  }
+
+  updateHearts(h, m) {
+    this.ui.hearts.clear(true, true);
+    for (let i = 0; i < m; i++) {
+      const heart = this.add.image(10 + i * 14, 10, 'ui_heart').setOrigin(0, 0).setScrollFactor(0);
+      heart.setTint(i < h ? 0xff4d6d : 0x23303a);
+      this.ui.hearts.add(heart);
+    }
+  }
+
+  refreshUI() {
+    const inv = this.player.inventory;
+    this.ui.text.setText(`Shards: ${inv.shards}  Keys: ${inv.keys}  Score: ${this.score}`);
+  }
+
+  spawnCollectibles() {
+    const orbPositions = [
+      { x: 220, y: 380 }, { x: 260, y: 360 }, { x: 300, y: 340 },
+      { x: 720, y: 320 }, { x: 760, y: 300 }, { x: 1200, y: 260 },
+    ];
+    orbPositions.forEach(p => this.orbs.create(p.x, p.y, 'shard'));
+
+    this.keys.create(560, 420, 'key');
+    this.shards.create(980, 320, 'shard');
+  }
+
+  spawnEnemies() {
+    const e1 = new Enemy(this, 520, 460);
+    e1.setTexture('enemy-shadow');
+    e1.setPatrolPoints([{ x: 520, y: 460 }, { x: 680, y: 460 }]);
+    this.enemies.add(e1);
+
+    const e2 = new Enemy(this, 1100, 420);
+    e2.setTexture('enemy-shadow');
+    e2.setPatrolPoints([{ x: 1040, y: 420 }, { x: 1240, y: 420 }]);
+    this.enemies.add(e2);
+  }
+
+  buildLevel(id) {
+    // Clear previous
+    this.platforms.clear(true, true);
+    this.doors.length = 0;
+    this.switches.length = 0;
+
+    // Ground
+    for (let x = 0; x <= 2000; x += 400) {
+      this.platforms.create(x + 200, 584, 'ground').refreshBody();
+    }
+
+    // Biome variations + branching
+    if (id % 2 === 0) {
+      // Ruins biome
+      this.add.text(20, 560, 'Ruins', { font: '12px monospace', color: '#788' }).setScrollFactor(0);
+      this.platforms.create(300, 480, 'platform').refreshBody();
+      this.platforms.create(360, 440, 'platform').refreshBody();
+      this.platforms.create(420, 400, 'platform').refreshBody();
+
+      // Branch: Upper path (requires double jump/wall)
+      this.platforms.create(700, 360, 'platform').refreshBody();
+      this.platforms.create(760, 320, 'platform').refreshBody();
+
+      // Lower path with door locked by switches
+      const door = new PuzzleDoor(this, 900, 520, 28, 80);
+      this.doors.push(door);
+      const sw1 = new PuzzleSwitch(this, 820, 540);
+      const sw2 = new PuzzleSwitch(this, 980, 540);
+      this.switches.push(sw1, sw2);
+    } else {
+      // Cavern biome
+      this.add.text(20, 560, 'Cavern', { font: '12px monospace', color: '#887' }).setScrollFactor(0);
+      this.platforms.create(260, 520, 'platform').refreshBody();
+      this.platforms.create(420, 460, 'platform').refreshBody();
+      this.platforms.create(580, 420, 'platform').refreshBody();
+      this.platforms.create(820, 380, 'platform').refreshBody();
+
+      const door = new PuzzleDoor(this, 1200, 500, 28, 100);
+      this.doors.push(door);
+      const sw1 = new PuzzleSwitch(this, 1120, 540);
+      const sw2 = new PuzzleSwitch(this, 1280, 540);
+      const sw3 = new PuzzleSwitch(this, 1400, 540);
+      this.switches.push(sw1, sw2, sw3);
+    }
+  }
+
+  update(time, delta) {
+    // Toggle debug physics bounds
+    if (Phaser.Input.Keyboard.JustDown(this.debugKey)) {
+      const dbg = this.physics.world.drawDebug;
+      this.physics.world.drawDebug = !dbg;
+      this.physics.world.debugGraphic.clear();
+    }
+
     this.player.handleInput(this.cursors, this.wasd);
-    this.updateShadowEffects();
 
-    // Enemy bounce tweak
-    this.enemyShadows.children.iterate(enemy => {
-      if (!enemy || !enemy.body) return;
-      if (enemy.body.touching.left || enemy.body.touching.right) {
-        enemy.setVelocityX(-enemy.body.velocity.x);
-      }
+    // Enemy AI updates
+    this.enemies.children.iterate(e => {
+      if (e) e.updateAI(this.player, this.platforms);
     });
 
-    // Win condition
-    if (this.score >= 80 && this.shadows.countActive(true) === 0) {
-      this.winGame();
+    // Branching progression: if player reaches far right, advance level
+    if (this.player.x > 1920) {
+      this.level++;
+      this.buildLevel(this.level);
+      this.player.setPosition(80, 460);
+      this.spawnEnemies();
+      this.spawnCollectibles();
     }
   }
 
-  collectShadow(player, orb) {
-    orb.disableBody(true, true);
-    this.score += 10;
-    this.scoreText.setText('Shadow Energy: ' + this.score);
-
-    const fx = this.add.graphics();
-    fx.fillStyle(0x9966ff).fillCircle(orb.x, orb.y, 20).setAlpha(0.8);
-    this.tweens.add({ targets: fx, alpha: 0, scaleX: 2, scaleY: 2, duration: 300, onComplete: () => fx.destroy() });
-
-    if (Phaser.Math.Between(1, 3) === 1) {
-      const s = this.shadows.create(Phaser.Math.Between(50, 750), 0, 'shadow-orb');
-      s.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-      s.setTint(0x9966ff);
-      s.body.setSize(12, 12);
-    }
-  }
-
-  hitEnemy(player, enemy) {
+  onPlayerDeath() {
     this.physics.pause();
-    player.setTint(0xff0000);
-
-    const t = this.add.text(400, 300, 'SHADOW CONSUMED YOU!\nReload to try again', { fontSize: '32px', fill: '#ff0000', fontFamily: 'Arial', align: 'center' });
-    t.setOrigin(0.5);
-    this.cameras.main.flash(1000, 255, 0, 0);
-
-    this.gameStarted = false;
-  }
-
-  updateShadowEffects() {
-    this.shadowEffect.clear();
-    const px = this.player.x;
-    const py = this.player.y;
-
-    // Subtle gradient and ambient circles around the player
-    this.shadowEffect.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.3, 0.1, 0.3, 0.1);
-    const radius = 150;
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const x = px + Math.cos(angle) * radius;
-      const y = py + Math.sin(angle) * radius;
-      if (x > 0 && x < 800 && y > 0 && y < 600) {
-        this.shadowEffect.fillStyle(0x000033, 0.1);
-        this.shadowEffect.fillCircle(x, y, 30);
-      }
-    }
-  }
-
-  winGame() {
-    this.physics.pause();
-    const win = this.add.text(400, 300, 'SHADOW REALM MASTERED!\nYou collected enough shadow energy!', { fontSize: '28px', fill: '#00ff00', fontFamily: 'Arial', align: 'center' });
-    win.setOrigin(0.5);
-    this.cameras.main.flash(2000, 0, 255, 0);
-    this.shadowParticles.setConfig({ speed: { min: 100, max: 200 }, scale: { start: 0.3, end: 0 }, tint: 0x00ff00, frequency: 50 });
-    this.gameStarted = false;
+    const t = this.add.text(this.cameras.main.worldView.centerX, this.cameras.main.worldView.centerY,
+      'SHADOW CONSUMED YOU!\nPress R to retry', { fontSize: '24px', color: '#ff4d6d', fontFamily: 'monospace', align: 'center' }).setOrigin(0.5);
+    this.input.keyboard.once('keydown-R', () => {
+      this.scene.restart();
+    });
   }
 }
 
@@ -198,15 +207,14 @@ const config = {
   height: 600,
   parent: 'phaser-game',
   backgroundColor: '#0a0a0a',
-  physics: { default: 'arcade', arcade: { gravity: { y: 300 }, debug: false } },
+  physics: { default: 'arcade', arcade: { gravity: { y: 480 }, debug: false } },
   scene: [MainScene]
 };
 
 const game = new Phaser.Game(config);
 
-// Export for testing or modular use
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { Player, MainScene, config, game };
+  module.exports = { Player, Enemy, PuzzleDoor, PuzzleSwitch, MainScene, config, game };
 }
 
-console.log('EchoRealms: Shadow Odyssey loaded. Use Arrow keys / WASD.');
+console.log('EchoRealms: Shadow Odyssey enhanced build loaded. Controls: Arrows/WASD + Shift to dash.');

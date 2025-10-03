@@ -5,169 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EchoRealms: Shadow Odyssey</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        #gameContainer {
+            width: 1000px;
+            height: 700px;
+            margin: 0 auto;
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.6);
+        }
+        
+        #phaser-game {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0d001a 0%, #1a0033 100%);
+        }
+        
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0d001a 0%, #1a0033 50%, #2a1040 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .loading-screen h1 {
+            color: #00ffff;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+        }
+        
+        .loading-screen p {
+            color: #cccccc;
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: #00ffff;
+            animation: spin 1s linear infinite;
+            margin: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            color: #cccccc;
+            font-size: 0.9rem;
+            border: 1px solid #00ffff;
+        }
+        
+        .controls-info strong {
+            color: #00ffff;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <div id="gameContainer">
-        <!-- Game Canvas -->
         <div id="phaser-game"></div>
         
-        <!-- Loading Screen -->
-        <div id="loadingScreen" class="screen">
+        <div id="loadingScreen" class="loading-screen">
             <h1>🌌 EchoRealms: Shadow Odyssey</h1>
             <div class="loading-spinner"></div>
             <p>Loading magical realms...</p>
+            <p>Get ready to master your shadow abilities!</p>
         </div>
         
-        <!-- Start Screen -->
-        <div id="startScreen" class="screen hidden">
-            <h1>🌌 EchoRealms: Shadow Odyssey</h1>
-            <h2>✨ Master the Shadow Abilities ✨</h2>
-            
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h3>🚀 Epic Movement</h3>
-                    <div class="feature-list">
-                        Triple Jump • Echo Dash<br>
-                        Time Slow • Ground Slam<br>
-                        Wall Slide • Combo System
-                    </div>
-                </div>
-                
-                <div class="feature-card">
-                    <h3>🌍 Four Biomes</h3>
-                    <div class="feature-list">
-                        Shadow Realm • Forest Kingdom<br>
-                        Crystal Caves • Boss Arena<br>
-                        Progressive Difficulty
-                    </div>
-                </div>
-                
-                <div class="feature-card">
-                    <h3>🎮 Smart Combat</h3>
-                    <div class="feature-list">
-                        Adaptive AI • Dynamic Enemies<br>
-                        Strategic Abilities • Boss Battles<br>
-                        Skill-Based Challenge
-                    </div>
-                </div>
-                
-                <div class="feature-card">
-                    <h3>🎆 Visual Effects</h3>
-                    <div class="feature-list">
-                        Particle Systems • Screen Effects<br>
-                        Smooth Animations • Audio Feedback<br>
-                        Professional Polish
-                    </div>
-                </div>
-            </div>
-            
-            <button id="startBtn" onclick="startGame()">🎮 Begin Adventure</button>
-            <button id="instructionsBtn" onclick="showInstructions()">📚 How to Play</button>
-        </div>
-        
-        <!-- Instructions Screen -->
-        <div id="instructionsScreen" class="screen hidden">
-            <h1>🎮 How to Play</h1>
-            
-            <div class="controls-section">
-                <h2>🕹️ Controls</h2>
-                <div class="controls-grid">
-                    <div class="control-item">
-                        <strong>WASD / Arrow Keys</strong><br>
-                        Move and Jump
-                    </div>
-                    <div class="control-item">
-                        <strong>X Key</strong><br>
-                        Echo Dash (invulnerable)
-                    </div>
-                    <div class="control-item">
-                        <strong>C Key</strong><br>
-                        Time Slow (bullet-time)
-                    </div>
-                    <div class="control-item">
-                        <strong>Z Key</strong><br>
-                        Ground Slam (area damage)
-                    </div>
-                </div>
-            </div>
-            
-            <div class="objective-section">
-                <h2>🎯 Objective</h2>
-                <p>Collect artifacts and orbs while mastering your shadow abilities across four unique biomes!</p>
-                <ul>
-                    <li>🔮 Collect artifacts to progress to next biome</li>
-                    <li>💎 Gather orbs and crystals for points</li>
-                    <li>⚔️ Defeat enemies with strategic ability use</li>
-                    <li>🏆 Master all biomes to achieve ultimate victory</li>
-                </ul>
-            </div>
-            
-            <button onclick="backToMenu()">⬅️ Back to Menu</button>
-        </div>
-        
-        <!-- Game Over Screen -->
-        <div id="gameOverScreen" class="screen hidden">
-            <h1>💀 Shadows Consumed You</h1>
-            <p class="biome-indicator">Your journey ends here... for now.</p>
-            <div class="score-display" id="finalScore">Final Score: 0</div>
-            <p>Every defeat teaches you more about the shadows.</p>
-            <p>Rise again, stronger than before!</p>
-            <button onclick="restartGame()">⚔️ Try Again</button>
-            <button onclick="returnToMenu()">🏠 Main Menu</button>
-        </div>
-        
-        <!-- Victory Screen -->
-        <div id="victoryScreen" class="screen hidden">
-            <h1>🎉 Master of Shadows!</h1>
-            <h2>✨ All Realms Conquered ✨</h2>
-            <div class="score-display" id="victoryScore">Final Score: 0</div>
-            <p>You have mastered all shadow abilities and conquered every realm!</p>
-            <p>Your legend echoes through the EchoRealms forever.</p>
-            
-            <div class="achievement-card">
-                <h3>🏆 Achievements Unlocked</h3>
-                <div class="achievement-list">
-                    ✅ Shadow Realm Explorer<br>
-                    ✅ Forest Guardian Defeated<br>
-                    ✅ Crystal Cave Master<br>
-                    ✅ Boss Arena Champion
-                </div>
-            </div>
-            
-            <button onclick="restartGame()">🚀 Play Again</button>
-            <button onclick="returnToMenu()">🏠 Main Menu</button>
-        </div>
-        
-        <!-- Pause Screen -->
-        <div id="pauseScreen" class="screen hidden">
-            <h1>⏸️ Game Paused</h1>
-            <p>Take a breath, shadow master.</p>
-            <button onclick="resumeGame()">▶️ Resume</button>
-            <button onclick="restartGame()">🔄 Restart Level</button>
-            <button onclick="returnToMenu()">🏠 Main Menu</button>
-        </div>
-        
-        <!-- Level Transition -->
-        <div id="transitionScreen" class="screen hidden">
-            <h1>🌟 Biome Complete!</h1>
-            <p class="biome-indicator" id="nextBiomeName">Entering Next Realm...</p>
-            <div class="loading-spinner"></div>
-            <p>Prepare for new challenges ahead!</p>
-        </div>
-        
-        <!-- Error Screen -->
-        <div id="errorScreen" class="screen hidden">
-            <h1>⚠️ Oops! Something went wrong</h1>
-            <p id="errorMessage">The shadows are interfering with the game...</p>
-            <p>Don't worry, we can fix this!</p>
-            <button onclick="location.reload()">🔄 Reload Game</button>
-            <button onclick="returnToMenu()">🏠 Main Menu</button>
+        <div class="controls-info">
+            <strong>Controls:</strong>
+            WASD/Arrows: Move | X: Dash | C: Time Slow | Z: Ground Slam
         </div>
     </div>
 
-    <!-- Game Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
     <script src="game.js"></script>
-    <script src="gameManager.js"></script>
+    <script>
+        // Simple game initialization
+        window.addEventListener('load', function() {
+            // Hide loading screen after 2 seconds
+            setTimeout(function() {
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = '0';
+                    loadingScreen.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => {
+                        loadingScreen.classList.add('hidden');
+                    }, 500);
+                }
+            }, 2000);
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'F11') {
+                    event.preventDefault();
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        document.documentElement.requestFullscreen();
+                    }
+                }
+            });
+            
+            console.log('🎮 EchoRealms: Shadow Odyssey initialized!');
+            console.log('✨ Controls: WASD/Arrows to move, X to dash, C for time slow, Z for ground slam');
+            console.log('🏆 Objective: Collect artifacts to progress through biomes!');
+        });
+    </script>
 </body>
 </html>

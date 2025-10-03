@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoRealms Debug Test</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0d001a 0%, #1a0033 50%, #2a1040 100%);
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-item {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            border: 1px solid #00ffff;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .pass { background: green; }
+        .fail { background: red; }
+        .loading { background: orange; }
+        button {
+            background: linear-gradient(45deg, #006666, #00aaaa);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: linear-gradient(45deg, #008888, #00cccc);
+        }
+        #console {
+            background: black;
+            color: lime;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐛 EchoRealms Debug Test</h1>
+        <p>This page will help us identify what's preventing your game from working.</p>
+        
+        <div class="test-item">
+            <h3>1. Basic HTML Loading</h3>
+            <span id="html-status" class="status pass">✅ PASS</span>
+            <p>If you can see this page, basic HTML is working.</p>
+        </div>
+        
+        <div class="test-item">
+            <h3>2. JavaScript Execution</h3>
+            <span id="js-status" class="status loading">⏳ Testing...</span>
+            <p id="js-info">Testing JavaScript execution...</p>
+        </div>
+        
+        <div class="test-item">
+            <h3>3. Phaser.js CDN Loading</h3>
+            <span id="phaser-status" class="status loading">⏳ Loading...</span>
+            <p id="phaser-info">Testing Phaser.js CDN...</p>
+        </div>
+        
+        <div class="test-item">
+            <h3>4. Game Files Access</h3>
+            <span id="files-status" class="status loading">⏳ Testing...</span>
+            <p id="files-info">Testing game file accessibility...</p>
+        </div>
+        
+        <div class="test-item">
+            <h3>5. Simple Game Test</h3>
+            <span id="game-status" class="status loading">⏳ Pending...</span>
+            <p>If all above tests pass, we'll test a minimal Phaser game.</p>
+            <div id="simple-game" style="width: 400px; height: 300px; background: #333; margin: 10px 0; border-radius: 5px;"></div>
+            <button onclick="startSimpleGame()">🎮 Test Simple Game</button>
+        </div>
+        
+        <div class="test-item">
+            <h3>6. Action Tests</h3>
+            <button onclick="testOriginalGame()">🚀 Test Original Game</button>
+            <button onclick="showConsole()">📊 Show Console</button>
+            <button onclick="clearConsole()">🗑️ Clear Console</button>
+        </div>
+        
+        <div class="test-item">
+            <h3>7. Console Output</h3>
+            <div id="console">Debug console ready...
+</div>
+        </div>
+    </div>
+
+    <script>
+        // Debug console function
+        function log(message) {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            console.textContent += `[${timestamp}] ${message}
+`;
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function setStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${status}`;
+            element.textContent = status === 'pass' ? '✅ PASS' : 
+                                 status === 'fail' ? '❌ FAIL' : '⏳ TESTING';
+            
+            const infoElement = document.getElementById(elementId.replace('-status', '-info'));
+            if (infoElement) {
+                infoElement.textContent = message;
+            }
+        }
+        
+        // Test 2: JavaScript
+        try {
+            log('JavaScript execution test started');
+            setStatus('js-status', 'pass', 'JavaScript is working correctly!');
+            log('✅ JavaScript test passed');
+        } catch (error) {
+            setStatus('js-status', 'fail', 'JavaScript error: ' + error.message);
+            log('❌ JavaScript test failed: ' + error.message);
+        }
+        
+        // Test 3: Phaser.js CDN
+        function testPhaser() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js';
+            
+            script.onload = function() {
+                if (typeof Phaser !== 'undefined') {
+                    setStatus('phaser-status', 'pass', `Phaser.js ${Phaser.VERSION} loaded successfully!`);
+                    log('✅ Phaser.js loaded successfully: ' + Phaser.VERSION);
+                    testFiles();
+                } else {
+                    setStatus('phaser-status', 'fail', 'Phaser.js loaded but not accessible');
+                    log('❌ Phaser.js loaded but not accessible');
+                }
+            };
+            
+            script.onerror = function() {
+                setStatus('phaser-status', 'fail', 'Failed to load Phaser.js from CDN');
+                log('❌ Failed to load Phaser.js from CDN');
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // Test 4: Game Files
+        function testFiles() {
+            Promise.all([
+                fetch('./game.js').then(r => ({file: 'game.js', ok: r.ok, size: r.headers.get('content-length')})),
+                fetch('./gameManager.js').then(r => ({file: 'gameManager.js', ok: r.ok, size: r.headers.get('content-length')})),
+                fetch('./styles.css').then(r => ({file: 'styles.css', ok: r.ok, size: r.headers.get('content-length')}))
+            ]).then(results => {
+                const allOk = results.every(r => r.ok);
+                if (allOk) {
+                    const fileInfo = results.map(r => `${r.file} (${r.size || 'unknown'} bytes)`).join(', ');
+                    setStatus('files-status', 'pass', `All files accessible: ${fileInfo}`);
+                    log('✅ All game files are accessible');
+                } else {
+                    const failedFiles = results.filter(r => !r.ok).map(r => r.file);
+                    setStatus('files-status', 'fail', `Failed to access: ${failedFiles.join(', ')}`);
+                    log('❌ Some files failed to load: ' + failedFiles.join(', '));
+                }
+            }).catch(error => {
+                setStatus('files-status', 'fail', 'Error testing files: ' + error.message);
+                log('❌ Error testing files: ' + error.message);
+            });
+        }
+        
+        // Test 5: Simple Game
+        function startSimpleGame() {
+            try {
+                if (typeof Phaser === 'undefined') {
+                    setStatus('game-status', 'fail', 'Phaser.js not loaded');
+                    log('❌ Cannot start game: Phaser.js not loaded');
+                    return;
+                }
+                
+                log('🎮 Starting simple game test...');
+                
+                const config = {
+                    type: Phaser.AUTO,
+                    width: 400,
+                    height: 300,
+                    parent: 'simple-game',
+                    backgroundColor: '#2c3e50',
+                    scene: {
+                        preload: function() {
+                            log('📦 Simple game preload phase');
+                        },
+                        create: function() {
+                            log('🎨 Simple game create phase');
+                            
+                            // Create a simple moving rectangle
+                            this.player = this.add.rectangle(200, 150, 32, 32, 0x00ffff);
+                            
+                            // Add some text
+                            this.add.text(200, 50, 'Simple Test Game', {
+                                fontSize: '16px',
+                                color: '#ffffff'
+                            }).setOrigin(0.5);
+                            
+                            this.add.text(200, 250, 'If you see this, Phaser works!', {
+                                fontSize: '12px',
+                                color: '#00ff00'
+                            }).setOrigin(0.5);
+                            
+                            // Add simple movement
+                            this.tweens.add({
+                                targets: this.player,
+                                x: 350,
+                                duration: 2000,
+                                ease: 'Sine.inOut',
+                                yoyo: true,
+                                repeat: -1
+                            });
+                            
+                            setStatus('game-status', 'pass', 'Simple Phaser game working!');
+                            log('✅ Simple game test passed - Phaser is working correctly');
+                        }
+                    }
+                };
+                
+                new Phaser.Game(config);
+                
+            } catch (error) {
+                setStatus('game-status', 'fail', 'Game error: ' + error.message);
+                log('❌ Simple game test failed: ' + error.message);
+            }
+        }
+        
+        // Test Original Game
+        function testOriginalGame() {
+            log('🎮 Attempting to load original game files...');
+            
+            // Load game manager first
+            const gameManagerScript = document.createElement('script');
+            gameManagerScript.src = './gameManager.js';
+            
+            gameManagerScript.onload = function() {
+                log('✅ gameManager.js loaded');
+                
+                // Then load the main game
+                const gameScript = document.createElement('script');
+                gameScript.src = './game.js';
+                
+                gameScript.onload = function() {
+                    log('✅ game.js loaded');
+                    log('🎮 Original game scripts loaded. Check main page.');
+                    
+                    // Check if game variables are available
+                    if (typeof window.echoRealmsGame !== 'undefined') {
+                        log('✅ Game instance found: echoRealmsGame');
+                    } else {
+                        log('⚠️ Game instance not found');
+                    }
+                    
+                    if (typeof window.gameManager !== 'undefined') {
+                        log('✅ Game manager found');
+                    } else {
+                        log('⚠️ Game manager not found');
+                    }
+                };
+                
+                gameScript.onerror = function() {
+                    log('❌ Failed to load game.js');
+                };
+                
+                document.head.appendChild(gameScript);
+            };
+            
+            gameManagerScript.onerror = function() {
+                log('❌ Failed to load gameManager.js');
+            };
+            
+            document.head.appendChild(gameManagerScript);
+        }
+        
+        function showConsole() {
+            const consoleElement = document.getElementById('console');
+            consoleElement.style.display = consoleElement.style.display === 'none' ? 'block' : 'block';
+        }
+        
+        function clearConsole() {
+            document.getElementById('console').textContent = 'Debug console cleared...\n';
+        }
+        
+        // Capture console errors
+        window.addEventListener('error', function(event) {
+            log('🔥 ERROR: ' + event.message + ' at ' + event.filename + ':' + event.lineno);
+        });
+        
+        window.addEventListener('unhandledrejection', function(event) {
+            log('🔥 UNHANDLED PROMISE REJECTION: ' + event.reason);
+        });
+        
+        // Start tests
+        log('🚀 Debug tests started');
+        testPhaser();
+    </script>
+</body>
+</html>
